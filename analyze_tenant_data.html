@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Tenant Data</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #e9ecef;
+            position: sticky;
+            top: 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .operator-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .operator-button {
+            padding: 8px 15px;
+            margin: 5px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .operator-button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analyze Tenant Data Structure</h1>
+        
+        <div id="status" class="status loading">
+            🔄 Loading tenant.xlsx file...
+        </div>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Show status message
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = message;
+            statusEl.className = 'status ' + type;
+        }
+        
+        // Auto-load tenant.xlsx file
+        function autoLoadTenantFile() {
+            showStatus('🔄 Attempting to load tenant.xlsx file from XLSX Files folder...', 'loading');
+            
+            fetch('XLSX Files/tenant.xlsx')
+                .then(response => {
+                    console.log('Fetch response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`tenant.xlsx not found (HTTP ${response.status}: ${response.statusText})`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    showStatus('✅ tenant.xlsx file loaded successfully. Processing data...', 'success');
+                    console.log('tenant.xlsx file loaded, size:', data.byteLength, 'bytes');
+                    
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    console.log('Workbook sheet names:', workbook.SheetNames);
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    console.log('First sheet name:', firstSheetName);
+                    
+                    // Get data as array of arrays (header row included)
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('Raw data rows:', jsonData.length);
+                    
+                    // Also get data as objects to see column names
+                    const jsonObjects = XLSX.utils.sheet_to_json(worksheet);
+                    console.log('Data as objects (first row):', jsonObjects[0] || 'No data');
+                    
+                    showStatus(`✅ Processed tenant.xlsx successfully. Found ${jsonData.length} rows.`, 'success');
+                    analyzeData(jsonData, jsonObjects);
+                })
+                .catch(error => {
+                    console.error('Error loading tenant.xlsx:', error);
+                    showStatus(`❌ Error loading tenant.xlsx: ${error.message}`, 'error');
+                    document.getElementById('output').innerHTML = '<p>Detailed error: ' + error.message + '</p>';
+                });
+        }
+        
+        function analyzeData(rawData, objectData) {
+            const outputEl = document.getElementById('output');
+            if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+                outputEl.innerHTML = '<p>No data found in the file</p>';
+                return;
+            }
+            
+            // Display file information
+            let html = `<div class="info">
+                <h3>File Information:</h3>
+                <ul>
+                    <li>Total rows: ${rawData.length}</li>
+                    <li>Total columns in first row: ${rawData[0] ? rawData[0].length : 0}</li>
+                    ${objectData.length > 0 ? `<li>Column names (from first row): ${Object.keys(objectData[0]).join(', ')}</li>` : ''}
+                </ul>
+            </div>`;
+            
+            // Show header row
+            if (rawData.length > 0) {
+                html += '<h3>Header Row:</h3>';
+                html += '<table>';
+                html += '<thead><tr>';
+                const headerRow = rawData[0];
+                for (let j = 0; j < headerRow.length; j++) {
+                    html += `<th>Column ${j} (${String.fromCharCode(65 + j)})<br>${headerRow[j] || 'N/A'}</th>`;
+                }
+                html += '</tr></thead>';
+                html += '</table>';
+            }
+            
+            // Analyze data structure
+            const operators = new Set();
+            const regions = new Set();
+            const subRegions = new Set();
+            
+            // Process data rows (skip header)
+            for (let i = 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || !Array.isArray(row)) continue;
+                
+                // Assuming column structure:
+                // 0: Site ID
+                // 1: Operator (Jazz, Ufone, Zong, Telenor, USF, etc.)
+                // 2: Region
+                // 3: Coordinates
+                if (row.length >= 2) {
+                    const operator = row[1] ? row[1].toString().trim() : '';
+                    if (operator) operators.add(operator);
+                }
+                
+                if (row.length >= 3) {
+                    const region = row[2] ? row[2].toString().trim() : '';
+                    if (region) regions.add(region);
+                }
+                
+                if (row.length >= 4) {
+                    const subRegion = row[3] ? row[3].toString().trim() : '';
+                    if (subRegion) subRegions.add(subRegion);
+                }
+            }
+            
+            // Display operator information
+            html += `<div class="operator-section">
+                <h3>Operator Analysis:</h3>
+                <p>Found <strong>${operators.size}</strong> unique operators: ${Array.from(operators).join(', ')}</p>
+                
+                <h4>Operator Filter Buttons:</h4>`;
+                
+            operators.forEach(operator => {
+                html += `<button class="operator-button" onclick="filterByOperator('${operator}')">${operator}</button> `;
+            });
+            
+            html += `</div>`;
+            
+            // Display region information
+            html += `<div class="operator-section">
+                <h3>Region Analysis:</h3>
+                <p>Found <strong>${regions.size}</strong> unique regions: ${Array.from(regions).join(', ')}</p>
+                
+                <h4>Region Filter Buttons:</h4>`;
+                
+            regions.forEach(region => {
+                html += `<button class="operator-button" onclick="filterByRegion('${region}')">${region}</button> `;
+            });
+            
+            html += `</div>`;
+            
+            // Show raw data preview
+            html += '<h3>Raw Data Preview (First 10 rows):</h3>';
+            html += '<div style="max-height: 400px; overflow: auto;">';
+            html += '<table>';
+            
+            // Create header row with column indices
+            if (rawData.length > 0) {
+                html += '<thead><tr>';
+                const maxCols = Math.max(...rawData.map(row => row ? row.length : 0));
+                for (let j = 0; j < maxCols; j++) {
+                    html += `<th>Column ${j} (${String.fromCharCode(65 + j)})</th>`;
+                }
+                html += '</tr></thead>';
+            }
+            
+            // Show first 10 rows
+            const rowsToShow = Math.min(rawData.length, 10);
+            html += '<tbody>';
+            for (let i = 0; i < rowsToShow; i++) {
+                const row = rawData[i];
+                html += '<tr>';
+                if (row && Array.isArray(row)) {
+                    // Show up to 10 columns
+                    const maxCols = Math.max(...rawData.map(r => r ? r.length : 0), 10);
+                    for (let j = 0; j < maxCols; j++) {
+                        html += `<td>${row[j] !== undefined ? row[j] : ''}</td>`;
+                    }
+                } else {
+                    html += '<td colspan="10">Invalid row data</td>';
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            html += '</div>';
+            
+            if (rawData.length > 10) {
+                html += `<p><em>Showing first 10 of ${rawData.length} rows</em></p>`;
+            }
+            
+            outputEl.innerHTML = html;
+        }
+        
+        // Filter functions for testing
+        function filterByOperator(operator) {
+            alert(`Filtering by operator: ${operator}\n(This is just a test - actual filtering would be implemented in the map)`);
+        }
+        
+        function filterByRegion(region) {
+            alert(`Filtering by region: ${region}\n(This is just a test - actual filtering would be implemented in the map)`);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            autoLoadTenantFile();
+        });
+    </script>
+</body>
+</html>

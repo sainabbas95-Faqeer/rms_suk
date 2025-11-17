@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Entries Issue</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: white; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        button { padding: 10px 15px; margin: 5px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Debug SPD Entries Issue</h1>
+    <button onclick="testLocalStorageData()">Test LocalStorage Data</button>
+    <button onclick="testDirectLoading()">Test Direct Loading</button>
+    <button onclick="testFilteringLogic()">Test Filtering Logic</button>
+    <button onclick="clearDebug()">Clear Debug Info</button>
+    
+    <div id="debugOutput"></div>
+
+    <script>
+        function addDebug(message, type = 'info') {
+            const debugOutput = document.getElementById('debugOutput');
+            const div = document.createElement('div');
+            div.className = 'section ' + type;
+            div.innerHTML = message;
+            debugOutput.appendChild(div);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+        
+        function clearDebug() {
+            document.getElementById('debugOutput').innerHTML = '';
+        }
+        
+        // Simulate the filterData function
+        function filterData(data, filterType) {
+            console.log('Filtering data with filterType:', filterType);
+            console.log('Total data rows:', data.length);
+            
+            const startIndex = data.length > 0 && typeof data[0][0] === 'string' && data[0][0].toLowerCase().includes('site') ? 1 : 0;
+            let filteredData = [];
+            
+            console.log('Start index:', startIndex);
+            
+            // Count different types for debugging
+            let spdCount = 0;
+            let enfraCount = 0;
+            let smsldCount = 0;
+            let resolvedCount = 0;
+            let otherCount = 0;
+            
+            for (let i = startIndex; i < data.length; i++) {
+                const row = data[i];
+                const columnG = row[6] || ''; // Column G (7th column)
+                const columnL = row[11] || ''; // Column L (12th column)
+                
+                // Count different types
+                if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                    spdCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'ENFRA') {
+                    enfraCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'SMS LD') {
+                    smsldCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'RESOLVED') {
+                    resolvedCount++;
+                }
+                const trimmedColumnL = typeof columnL === 'string' ? columnL.trim().toUpperCase() : '';
+                if (trimmedColumnL && trimmedColumnL !== '' && 
+                    trimmedColumnL !== 'SPD' && 
+                    trimmedColumnL !== 'ENFRA' && 
+                    trimmedColumnL !== 'SMS LD' && 
+                    trimmedColumnL !== 'RESOLVED') {
+                    otherCount++;
+                }
+                
+                switch(filterType) {
+                    case 'spd':
+                        if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                            filteredData.push(row);
+                        }
+                        break;
+                }
+            }
+            
+            console.log('Counts - SPD:', spdCount, ', Enfra:', enfraCount, ', SMS LD:', smsldCount, ', Resolved:', resolvedCount, ', Others:', otherCount);
+            console.log('Filtered data count:', filteredData.length);
+            return { filteredData, counts: { spd: spdCount, enfra: enfraCount, smsld: smsldCount, resolved: resolvedCount, others: otherCount } };
+        }
+        
+        // Display data in a simple table
+        function displaySimpleTable(data) {
+            if (data.length === 0) {
+                return '<p>No data to display</p>';
+            }
+            
+            let html = '<table><thead><tr>';
+            html += '<th>Site Id</th><th>Sub Region</th><th>Region</th><th>Beginning</th><th>Days Passed</th><th>Aging</th><th>ES POC</th><th>History | Issue</th>';
+            html += '</tr></thead><tbody>';
+            
+            // Show first 10 rows
+            for (let i = 0; i < Math.min(10, data.length); i++) {
+                const row = data[i];
+                html += '<tr>';
+                html += '<td>' + (row[0] || '') + '</td>'; // Site Id
+                html += '<td>' + (row[1] || '') + '</td>'; // Sub Region
+                html += '<td>' + (row[2] || '') + '</td>'; // Region
+                html += '<td>' + (row[3] || '') + '</td>'; // Beginning
+                html += '<td>' + (row[4] || '') + '</td>'; // Days Passed
+                html += '<td>' + (row[5] || '') + '</td>'; // Aging
+                html += '<td>' + (row[7] || '') + '</td>'; // ES POC
+                html += '<td>' + (row[9] || '') + '</td>'; // History | Issue
+                html += '</tr>';
+            }
+            
+            html += '</tbody></table>';
+            if (data.length > 10) {
+                html += '<p>... and ' + (data.length - 10) + ' more rows</p>';
+            }
+            
+            return html;
+        }
+        
+        function testLocalStorageData() {
+            addDebug('<h2>Testing LocalStorage Data</h2>');
+            
+            try {
+                const storedData = localStorage.getItem('spdData');
+                if (storedData) {
+                    const data = JSON.parse(storedData);
+                    addDebug('✅ Data loaded from localStorage, rows: ' + data.length, 'success');
+                    
+                    // Show first 3 rows
+                    addDebug('<h3>First 3 rows:</h3><pre>' + JSON.stringify(data.slice(0, 3), null, 2) + '</pre>');
+                    
+                    // Test filtering
+                    const result = filterData(data, 'spd');
+                    addDebug('<h3>SPD Filter Results:</h3><p>Filtered count: ' + result.filteredData.length + '</p>', 'success');
+                    
+                    if (result.filteredData.length > 0) {
+                        addDebug('<h3>First 3 filtered rows:</h3><pre>' + JSON.stringify(result.filteredData.slice(0, 3), null, 2) + '</pre>');
+                        addDebug('<h3>Display Preview:</h3>' + displaySimpleTable(result.filteredData.slice(0, 5)));
+                    }
+                } else {
+                    addDebug('⚠️ No data found in localStorage', 'warning');
+                }
+            } catch (e) {
+                addDebug('❌ Error parsing stored data from localStorage: ' + e.message, 'error');
+            }
+        }
+        
+        function testDirectLoading() {
+            addDebug('<h2>Testing Direct Loading from SPD.xlsx</h2>');
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('✅ SPD.xlsx loaded successfully, rows: ' + jsonData.length, 'success');
+                    
+                    // Show first 3 rows
+                    addDebug('<h3>First 3 rows:</h3><pre>' + JSON.stringify(jsonData.slice(0, 3), null, 2) + '</pre>');
+                    
+                    // Test filtering
+                    const result = filterData(jsonData, 'spd');
+                    addDebug('<h3>SPD Filter Results:</h3><p>Filtered count: ' + result.filteredData.length + '</p>', 'success');
+                    
+                    if (result.filteredData.length > 0) {
+                        addDebug('<h3>First 3 filtered rows:</h3><pre>' + JSON.stringify(result.filteredData.slice(0, 3), null, 2) + '</pre>');
+                        addDebug('<h3>Display Preview:</h3>' + displaySimpleTable(result.filteredData.slice(0, 5)));
+                    }
+                })
+                .catch(error => {
+                    addDebug('❌ Error loading SPD.xlsx: ' + error.message, 'error');
+                });
+        }
+        
+        function testFilteringLogic() {
+            addDebug('<h2>Testing Filtering Logic</h2>');
+            
+            // Create test data to verify filtering logic
+            const testData = [
+                ['Site Id', 'Sub Region', 'Region', 'Beginning', 'Days Passed', 'Aging', 'Alarm Type', 'ES POC', 'Column I', 'History | Issue', 'Column K', 'Alarm End'],
+                ['Site001', 'SubRegion1', 'Region1', '2023-01-01', 45, '31-100 Days', 'SPD', 'POC1', '', 'Power Failure', '', 'SMS LD'],
+                ['Site002', 'SubRegion2', 'Region2', '2023-02-01', 15, '01-10 Days', 'SPD', 'POC2', '', 'Battery Issue', '', 'ENFRA'],
+                ['Site003', 'SubRegion3', 'Region3', '2023-03-01', 120, '100+ Days', 'SPD', 'POC3', '', 'Rectifier Fault', '', 'RESOLVED'],
+                ['Site004', 'SubRegion4', 'Region4', '2023-04-01', 75, '31-100 Days', 'OTHER', 'POC4', '', 'AC Failure', '', 'OTHER'],
+                ['Site005', 'SubRegion5', 'Region5', '2023-05-01', 5, '01-10 Days', 'SPD', 'POC5', '', 'Generator Issue', '', 'SMS LD']
+            ];
+            
+            addDebug('<h3>Test Data:</h3><pre>' + JSON.stringify(testData, null, 2) + '</pre>');
+            
+            // Test filtering
+            const result = filterData(testData, 'spd');
+            addDebug('<h3>SPD Filter Results:</h3><p>Filtered count: ' + result.filteredData.length + '</p>', 'success');
+            
+            if (result.filteredData.length > 0) {
+                addDebug('<h3>Filtered rows:</h3><pre>' + JSON.stringify(result.filteredData, null, 2) + '</pre>');
+                addDebug('<h3>Display Preview:</h3>' + displaySimpleTable(result.filteredData));
+            }
+        }
+    </script>
+</body>
+</html>

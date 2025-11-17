@@ -1,0 +1,23 @@
+﻿Column L Analysis Report
+Generated: 10/11/2025 20:34:03
+File: DB.xlsx
+
+COUNTS:
+=======
+Enfra Count: 26
+SMS LD Count: 23
+Others Count: 0
+Empty Count: 283
+Total Analyzed: 332
+
+PERCENTAGES:
+============
+Enfra: 7.83%
+SMS LD: 6.93%
+Others: 0%
+
+SUMMARY:
+========
+- Primary focus entries (Enfra + SMS LD): 49
+- Data completeness: 14.76%
+- Most common: Enfra

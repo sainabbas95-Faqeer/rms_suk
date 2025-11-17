@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            position: relative;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(238, 90, 111, 0.4);
+        }
+        
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(238, 90, 111, 0.6);
+        }
+        
+        .stats-summary {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+        }
+        
+        .route-planner {
+            position: absolute;
+            top: 45px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+        }
+        
+        .route-summary {
+            background: rgba(46, 204, 113, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            color: #27ae60;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .route-button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .route-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+        }
+        
+        .clear-route-button {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+        
+        .clear-route-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+        }
+        
+        .route-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .route-modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .route-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .route-modal-header h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .close-route-modal {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .route-form-group {
+            margin-bottom: 15px;
+        }
+        
+        .route-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .route-form-group input, .route-form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .route-form-group input:focus, .route-form-group select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #e9e9e9;
+        }
+        
+        .route-sites-container {
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .route-site-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        
+        .route-site-item:last-child {
+            border-bottom: none;
+        }
+        
+        .route-site-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        .remove-site-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .route-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .route-calculate-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .route-calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+        }
+        
+        .route-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .route-result.show {
+            display: block;
+        }
+        
+        .route-distance {
+            font-size: 20px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        .route-map-container {
+            height: 300px;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid #3498db;
+        }
+        
+        .route-map-container.show {
+            display: block;
+        }
+        
+        #routeMap {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .stat-item {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            color: #34495e;
+        }
+        
+        .search-section-header {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .search-section-header input {
+            padding: 8px 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 250px;
+            transition: border-color 0.3s;
+        }
+        
+        .search-section-header input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        
+        .header h1:hover {
+            color: #3498db;
+        }
+        
+        .region-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .region-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            padding: 15px;
+        }
+        
+        /* Smaller cards for Jacob Abad and Larkana */
+        .region-container.jacob, .region-container.larkana {
+            flex: 0.8;
+        }
+        
+        /* Larger card for Sukkur */
+        .region-container.sukkur {
+            flex: 1.2;
+        }
+        
+        .region-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        
+        .region-button.jacob {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: #333;
+        }
+        
+        .region-button.larkana {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: #333;
+        }
+        
+        .region-button.sukkur {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #333;
+        }
+        
+        .region-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Make subregion buttons horizontal and show site counts */
+        .subregion-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-height: none;
+            overflow-y: visible;
+        }
+        
+        .subregion-button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            text-align: center;
+            flex: 1 1 auto;
+            min-width: 120px;
+            max-width: 200px;
+        }
+        
+        /* Colorful subregion buttons */
+        .subregion-button:nth-child(1) { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); }
+        .subregion-button:nth-child(2) { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
+        .subregion-button:nth-child(3) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .subregion-button:nth-child(4) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .subregion-button:nth-child(5) { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
+        .subregion-button:nth-child(6) { background: linear-gradient(135deg, #a6c0fe 0%, #f68084 100%); }
+        .subregion-button:nth-child(7) { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); }
+        .subregion-button:nth-child(8) { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+        .subregion-button:nth-child(9) { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+        .subregion-button:nth-child(10) { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
+        
+        .subregion-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .content {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .map-container {
+            flex: 1;
+            height: 700px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e0f7fa 0%, #f8f9fa 100%);
+        }
+
+        /* Custom marker styles */
+        .custom-marker {
+            background: none;
+            border: none;
+        }
+        
+        /* Legend styles */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            max-width: 300px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        
+        .legend-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .legend-color {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        
+        .legend-label {
+            font-size: 0.95rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Add this to hide the status message by default */
+        #statusMessage {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 900px) {
+            .region-section {
+                flex-direction: column;
+            }
+            
+            .content {
+                flex-direction: column;
+            }
+            
+            .map-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='welcome.html'">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <div class="stats-summary">
+                <div class="stat-item">Total: <span id="totalSites">0</span></div>
+                <div class="stat-item">Visible: <span id="visibleSites">0</span></div>
+                <div class="stat-item">Filtered: <span id="filteredSites">0</span></div>
+            </div>
+            <div class="route-planner">
+                <div class="route-summary" id="routeSummary">
+                    <i class="fas fa-route"></i> Route: <span id="routeDistance">0 km</span>
+                </div>
+                <button class="route-button" onclick="openRoutePlanner()">
+                    <i class="fas fa-map-marked-alt"></i> Plan Route
+                </button>
+                <button class="clear-route-button" onclick="clearRoutePlan()">
+                    <i class="fas fa-trash-alt"></i> Clear Route
+                </button>
+            </div>
+            <h1 id="uploadTrigger">Map Visualization</h1>
+            <div class="search-section-header">
+                <input type="text" id="siteSearch" placeholder="Enter site ID or name...">
+                <button class="btn-primary" onclick="applyFilters()" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button class="btn-secondary" onclick="resetFilters()" style="padding: 8px 15px; background: #95a5a6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Region section with buttons -->
+        <div class="region-section">
+            <div class="region-container jacob">
+                <button class="region-button jacob" onclick="filterByRegion('Jacob Abad')">Jacob Abad</button>
+                <div class="subregion-buttons jacob" id="jacobSubregions">
+                    <!-- Subregions for Jacob Abad will be populated here -->
+                </div>
+            </div>
+            
+            <div class="region-container larkana">
+                <button class="region-button larkana" onclick="filterByRegion('Larkana')">Larkana</button>
+                <div class="subregion-buttons larkana" id="larkanaSubregions">
+                    <!-- Subregions for Larkana will be populated here -->
+                </div>
+            </div>
+            
+            <div class="region-container sukkur">
+                <button class="region-button sukkur" onclick="filterByRegion('Sukkur')">Sukkur</button>
+                <div class="subregion-buttons sukkur" id="sukkurSubregions">
+                    <!-- Subregions for Sukkur will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden file input for Excel upload -->
+        <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+
+        <!-- Route Planner Modal -->
+        <div class="route-modal" id="routeModal">
+            <div class="route-modal-content">
+                <div class="route-modal-header">
+                    <h2><i class="fas fa-route"></i> Plan Your Route</h2>
+                    <button class="close-route-modal" onclick="closeRoutePlanner()">&times;</button>
+                </div>
+                
+                <div class="route-form-group">
+                    <label for="startLocation"><i class="fas fa-play-circle"></i> Start Location:</label>
+                    <input type="text" id="startLocation" placeholder="e.g., Shikarpur" class="route-location-input">
+                    <div id="startLocationAutocomplete" class="autocomplete-items"></div>
+                </div>
+                
+                <div class="route-form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Sites to Visit:</label>
+                    <div class="route-sites-container" id="routeSitesContainer">
+                        <div class="route-site-item">
+                            <input type="text" class="route-site-input" placeholder="Enter site ID or name (last 4 digits supported)" oninput="searchSites(this)">
+                            <button class="remove-site-btn" onclick="removeSite(this)">×</button>
+                            <div class="autocomplete-items"></div>
+                        </div>
+                    </div>
+                    <button class="route-button" onclick="addSiteField()" style="margin-top: 10px;">
+                        <i class="fas fa-plus"></i> Add Site
+                    </button>
+                </div>
+                
+                <div class="route-form-group">
+                    <label for="endLocation"><i class="fas fa-stop-circle"></i> End Location:</label>
+                    <input type="text" id="endLocation" placeholder="e.g., Shikarpur" class="route-location-input">
+                    <div id="endLocationAutocomplete" class="autocomplete-items"></div>
+                </div>
+                
+                <div class="route-actions">
+                    <button class="route-calculate-btn" onclick="calculateRouteDistance()">
+                        <i class="fas fa-calculator"></i> Calculate Distance
+                    </button>
+                </div>
+                
+                <div class="route-result" id="routeResult">
+                    <h3>Route Summary:</h3>
+                    <p>Total Sites Visiting: <span id="totalSitesVisiting">0</span></p>
+                    <p>Total Distance: <span class="route-distance" id="totalRouteDistance">0 km</span></p>
+                    <p>Route Path: <span id="routePath"></span></p>
+                </div>
+                
+                <div class="route-map-container" id="routeMapContainer">
+                    <div id="routeMap" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusMessage" class="status loading">
+            🔄 Initializing map and waiting for Excel file upload...
+        </div>
+        
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Map Visualization &copy; 2025 Abbas Enterprises</p>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- SheetJS for Excel processing -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Leaflet for mapping -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global variables
+        let map;
+        let markers = [];
+        let sitesData = [];
+        let filteredSites = [];
+        let subRegionsByRegion = {};
+        
+        // Show status message
+        function showStatus(message, type) {
+            try {
+                const statusContainer = document.getElementById('statusMessage');
+                if (statusContainer) {
+                    statusContainer.innerHTML = message;
+                    statusContainer.className = 'status ' + type;
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        // Initialize Map
+        function initMap() {
+            console.log('Initializing Map...');
+            
+            const pakistanCenter = [27.7052, 68.8584];
+            
+            map = L.map('map').setView(pakistanCenter, 8);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            showStatus('✅ Map initialized. Please upload your Locations.xlsx file.', 'success');
+            
+            // Set up file input handler
+            document.getElementById('excelFile').addEventListener('change', handleFileSelect);
+            
+            // Set up header click handler for file upload
+            document.getElementById('uploadTrigger').addEventListener('click', function() {
+                document.getElementById('excelFile').click();
+            });
+        }
+        
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                return;
+            }
+            
+            showStatus('🔄 Reading Excel file...', 'loading');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    console.log('Excel data loaded:', jsonData.length, 'rows');
+                    processData(jsonData);
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showStatus(`❌ Error reading Excel file: ${error.message}`, 'error');
+                }
+            };
+            reader.onerror = function() {
+                showStatus('❌ Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Process data from Excel
+        function processData(data) {
+            try {
+                showStatus('🔍 Processing Excel data...', 'loading');
+                
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    throw new Error('Invalid data format or empty dataset');
+                }
+                
+                // Clear existing data
+                sitesData = [];
+                subRegionsByRegion = {};
+                
+                // Process rows (skip header)
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    if (!row || row.length < 4) continue;
+                    
+                    const siteId = row[0] || '';
+                    const subRegion = row[1] || '';
+                    const region = row[2] || '';
+                    const latLngData = row[3] || '';
+                    
+                    // Skip rows with missing required data
+                    if (!siteId || !subRegion) continue;
+                    
+                    // Skip rows with empty location data
+                    if (!latLngData || latLngData.trim() === '') continue;
+                    
+                    // Parse coordinates
+                    const cleanData = latLngData.replace(/[°\s]+/g, ' ').trim();
+                    const coords = cleanData.split(' ');
+                    
+                    if (coords.length < 2) continue;
+                    
+                    const lat = parseFloat(coords[0].trim());
+                    const lng = parseFloat(coords[1].trim());
+                    
+                    if (isNaN(lat) || isNaN(lng)) continue;
+                    
+                    // Basic coordinate validation (rough bounds for Pakistan)
+                    if (lat < 20 || lat > 38 || lng < 60 || lng > 80) continue;
+                    
+                    sitesData.push({
+                        siteId: siteId.trim(),
+                        subRegion: subRegion.trim(),
+                        region: region.trim(),
+                        lat: lat,
+                        lng: lng
+                    });
+                    
+                    // Group sub-regions by region
+                    if (!subRegionsByRegion[region]) {
+                        subRegionsByRegion[region] = new Set();
+                    }
+                    subRegionsByRegion[region].add(subRegion.trim());
+                }
+                
+                if (sitesData.length === 0) {
+                    throw new Error('No valid site data found in Excel file');
+                }
+                
+                // Set filtered sites to all sites initially
+                filteredSites = [...sitesData];
+                
+                // Populate region buttons with subregions and site counts
+                populateRegionButtons();
+                
+                // Display data on map
+                displayDataOnMap();
+                
+                // Update stats
+                updateStats();
+                
+                // Show success message without the count
+                // Hide the status message completely after successful load
+                const statusContainer = document.getElementById('statusMessage');
+                if (statusContainer) {
+                    statusContainer.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Error processing data:', error);
+                showStatus(`❌ Error processing data: ${error.message}`, 'error');
+            }
+        }
+        
+        // Populate region buttons with subregions and site counts
+        function populateRegionButtons() {
+            // Clear existing subregion buttons
+            document.getElementById('jacobSubregions').innerHTML = '';
+            document.getElementById('larkanaSubregions').innerHTML = '';
+            document.getElementById('sukkurSubregions').innerHTML = '';
+            
+            // Update region buttons with total site counts
+            updateRegionButtonCounts();
+            
+            // Populate Jacob Abad subregions with site counts
+            if (subRegionsByRegion['Jacob Abad']) {
+                const container = document.getElementById('jacobSubregions');
+                [...subRegionsByRegion['Jacob Abad']].forEach(subRegion => {
+                    const button = document.createElement('button');
+                    button.className = 'subregion-button';
+                    
+                    // Count sites for this subregion
+                    const siteCount = sitesData.filter(site => site.subRegion === subRegion).length;
+                    button.textContent = `${subRegion} (${siteCount})`;
+                    
+                    button.onclick = () => filterBySubRegion(subRegion);
+                    container.appendChild(button);
+                });
+            }
+            
+            // Populate Larkana subregions with site counts
+            if (subRegionsByRegion['Larkana']) {
+                const container = document.getElementById('larkanaSubregions');
+                [...subRegionsByRegion['Larkana']].forEach(subRegion => {
+                    const button = document.createElement('button');
+                    button.className = 'subregion-button';
+                    
+                    // Count sites for this subregion
+                    const siteCount = sitesData.filter(site => site.subRegion === subRegion).length;
+                    button.textContent = `${subRegion} (${siteCount})`;
+                    
+                    button.onclick = () => filterBySubRegion(subRegion);
+                    container.appendChild(button);
+                });
+            }
+            
+            // Populate Sukkur subregions with site counts
+            if (subRegionsByRegion['Sukkur']) {
+                const container = document.getElementById('sukkurSubregions');
+                [...subRegionsByRegion['Sukkur']].forEach(subRegion => {
+                    const button = document.createElement('button');
+                    button.className = 'subregion-button';
+                    
+                    // Count sites for this subregion
+                    const siteCount = sitesData.filter(site => site.subRegion === subRegion).length;
+                    button.textContent = `${subRegion} (${siteCount})`;
+                    
+                    button.onclick = () => filterBySubRegion(subRegion);
+                    container.appendChild(button);
+                });
+            }
+        }
+        
+        // Update region buttons with total site counts
+        function updateRegionButtonCounts() {
+            // Update Jacob Abad button
+            const jacobButton = document.querySelector('.region-button.jacob');
+            if (jacobButton) {
+                const jacobSites = sitesData.filter(site => site.region === 'Jacob Abad').length;
+                jacobButton.textContent = `Jacob Abad (Total Sites - ${jacobSites})`;
+            }
+            
+            // Update Larkana button
+            const larkanaButton = document.querySelector('.region-button.larkana');
+            if (larkanaButton) {
+                const larkanaSites = sitesData.filter(site => site.region === 'Larkana').length;
+                larkanaButton.textContent = `Larkana (Total Sites - ${larkanaSites})`;
+            }
+            
+            // Update Sukkur button
+            const sukkurButton = document.querySelector('.region-button.sukkur');
+            if (sukkurButton) {
+                const sukkurSites = sitesData.filter(site => site.region === 'Sukkur').length;
+                sukkurButton.textContent = `Sukkur (Total Sites - ${sukkurSites})`;
+            }
+        }
+        
+        // Filter by region
+        function filterByRegion(region) {
+            // Filter sites by region
+            filteredSites = sitesData.filter(site => site.region === region);
+            
+            // Update display
+            displayDataOnMap();
+            updateStats();
+            
+            showStatus(`✅ Showing ${filteredSites.length} sites for ${region} region.`, 'success');
+        }
+        
+        // Filter by sub-region
+        function filterBySubRegion(subRegion) {
+            // Filter sites by sub-region
+            filteredSites = sitesData.filter(site => site.subRegion === subRegion);
+            
+            // Update display
+            displayDataOnMap();
+            updateStats();
+            
+            showStatus(`✅ Showing ${filteredSites.length} sites for ${subRegion} sub-region.`, 'success');
+        }
+        
+        // Display data on map
+        function displayDataOnMap() {
+            console.log('Displaying', filteredSites.length, 'sites on map');
+            
+            // Clear existing markers
+            clearMarkers();
+            
+            // Define colors for sub-regions
+            const subRegionColors = {};
+            let colorIndex = 0;
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFBE0B', '#FB5607', '#8338EC', '#3A86FF',
+                '#06D6A0', '#118AB2', '#073B4C', '#EF476F', '#FFD166', '#0077B6', '#9B5DE5',
+                '#F15BB5', '#00BBF9', '#00F5D4', '#FEE440', '#9B5DE5', '#F15BB5'
+            ];
+            
+            // Assign colors to sub-regions
+            const subRegions = [...new Set(filteredSites.map(site => site.subRegion))];
+            subRegions.forEach(subRegion => {
+                subRegionColors[subRegion] = colors[colorIndex % colors.length];
+                colorIndex++;
+            });
+            
+            // Create markers for each site with sub-region specific colors
+            filteredSites.forEach((site, index) => {
+                const markerColor = subRegionColors[site.subRegion] || '#3498db';
+                
+                // Create a custom icon with color
+                const marker = L.marker([site.lat, site.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background-color: ${markerColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(map)
+                    .bindPopup(`
+                        <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                            <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${site.siteId}</h3>
+                            <p style="margin: 5px 0;"><strong>Sub Region:</strong> <span style="color: ${markerColor}; font-weight: bold;">${site.subRegion}</span></p>
+                            <p style="margin: 5px 0;"><strong>Region:</strong> ${site.region}</p>
+                            <p style="margin: 5px 0;"><strong>Coordinates:</strong> ${site.lat.toFixed(6)}, ${site.lng.toFixed(6)}</p>
+                        </div>
+                    `);
+                
+                markers.push(marker);
+            });
+            
+            // Fit map to bounds if we have markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+            
+            // Update legend
+            updateLegend(subRegionColors);
+            
+            // Add region/sub-region overlays
+            addRegionOverlays(subRegionColors);
+        }
+        
+        // Add colorful overlays for regions/sub-regions
+        function addRegionOverlays(subRegionColors) {
+            // Remove existing overlays
+            if (window.regionOverlays) {
+                window.regionOverlays.forEach(overlay => map.removeLayer(overlay));
+            }
+            window.regionOverlays = [];
+            
+            // Group sites by sub-region
+            const sitesBySubRegion = {};
+            filteredSites.forEach(site => {
+                if (!sitesBySubRegion[site.subRegion]) {
+                    sitesBySubRegion[site.subRegion] = [];
+                }
+                sitesBySubRegion[site.subRegion].push(site);
+            });
+            
+            // Create polygon overlays for each sub-region
+            Object.keys(sitesBySubRegion).forEach(subRegion => {
+                const sites = sitesBySubRegion[subRegion];
+                if (sites.length === 0) return;
+                
+                // Get color for this sub-region
+                const color = subRegionColors[subRegion] || '#3498db';
+                
+                // Calculate bounds for this sub-region
+                const latLngs = sites.map(site => [site.lat, site.lng]);
+                
+                if (latLngs.length === 1) {
+                    // For single site, create a small circle
+                    const circle = L.circle(latLngs[0], {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.5,
+                        radius: 15000,
+                        weight: 2,
+                        dashArray: '5, 5'
+                    }).addTo(map);
+                    window.regionOverlays.push(circle);
+                } else {
+                    // For multiple sites, create a convex hull
+                    try {
+                        const convexHull = createConvexHull(latLngs);
+                        if (convexHull.length >= 3) {
+                            const polygon = L.polygon(convexHull, {
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.3,
+                                weight: 3,
+                                dashArray: '5, 5',
+                                lineCap: 'round',
+                                lineJoin: 'round'
+                            }).addTo(map);
+                            window.regionOverlays.push(polygon);
+                        } else {
+                            // Fallback to simple polygon if convex hull fails
+                            const polygon = L.polygon(latLngs, {
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.3,
+                                weight: 3,
+                                dashArray: '5, 5'
+                            }).addTo(map);
+                            window.regionOverlays.push(polygon);
+                        }
+                    } catch (e) {
+                        console.log('Could not create polygon for', subRegion);
+                    }
+                }
+            });
+        }
+        
+        // Simple convex hull algorithm (Gift wrapping algorithm)
+        function createConvexHull(points) {
+            if (points.length < 3) return points;
+            
+            // Find the leftmost point
+            let leftmost = 0;
+            for (let i = 1; i < points.length; i++) {
+                if (points[i][1] < points[leftmost][1]) {
+                    leftmost = i;
+                }
+            }
+            
+            const hull = [];
+            let current = leftmost;
+            
+            do {
+                hull.push(points[current]);
+                let next = (current + 1) % points.length;
+                
+                for (let i = 0; i < points.length; i++) {
+                    const cross = crossProduct(points[current], points[i], points[next]);
+                    if (cross > 0) {
+                        next = i;
+                    }
+                }
+                
+                current = next;
+            } while (current !== leftmost);
+            
+            return hull;
+        }
+        
+        // Cross product of vectors AB and AC
+        function crossProduct(a, b, c) {
+            return (b[1] - a[1]) * (c[0] - b[0]) - (b[0] - a[0]) * (c[1] - b[1]);
+        }
+
+        // Update legend with sub-region colors and site counts
+        function updateLegend(subRegionColors) {
+            // Remove existing legend
+            const existingLegend = document.querySelector('.map-legend');
+            if (existingLegend) {
+                existingLegend.remove();
+            }
+            
+            // Create legend container
+            const legend = document.createElement('div');
+            legend.className = 'map-legend';
+            
+            // Add title
+            const title = document.createElement('div');
+            title.className = 'legend-title';
+            title.textContent = 'Sub-Region Legend';
+            legend.appendChild(title);
+            
+            // Add items with site counts
+            Object.keys(subRegionColors).forEach(subRegion => {
+                const color = subRegionColors[subRegion];
+                
+                // Count sites for this subregion
+                const siteCount = filteredSites.filter(site => site.subRegion === subRegion).length;
+                
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                
+                const colorBox = document.createElement('div');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = color;
+                
+                const label = document.createElement('div');
+                label.className = 'legend-label';
+                label.textContent = `${subRegion} (${siteCount} sites)`;
+                
+                item.appendChild(colorBox);
+                item.appendChild(label);
+                legend.appendChild(item);
+            });
+            
+            // Add legend to map container
+            document.querySelector('.map-container').appendChild(legend);
+        }
+
+        // Clear all markers
+        function clearMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Clear region overlays
+            if (window.regionOverlays) {
+                window.regionOverlays.forEach(overlay => map.removeLayer(overlay));
+                window.regionOverlays = [];
+            }
+        }
+
+        // Apply filters (search)
+        function applyFilters() {
+            const siteSearch = document.getElementById('siteSearch').value.toLowerCase().trim();
+            
+            if (siteSearch) {
+                // Check if search term is 4 digits (match last 4 digits of site ID)
+                if (/^\d{4}$/.test(siteSearch)) {
+                    // Match last 4 digits of site ID
+                    filteredSites = sitesData.filter(site => {
+                        const siteId = site.siteId.toLowerCase();
+                        // Extract last 4 characters from site ID
+                        const lastFourDigits = siteId.slice(-4);
+                        return lastFourDigits === siteSearch;
+                    });
+                    
+                    if (filteredSites.length > 0) {
+                        showStatus(`✅ Found ${filteredSites.length} sites matching last 4 digits "${siteSearch}".`, 'success');
+                    } else {
+                        showStatus(`❌ No sites found matching last 4 digits "${siteSearch}".`, 'error');
+                    }
+                } else {
+                    // Regular search (match any part of site ID, sub-region, or region)
+                    filteredSites = sitesData.filter(site => 
+                        site.siteId.toLowerCase().includes(siteSearch) || 
+                        site.subRegion.toLowerCase().includes(siteSearch) ||
+                        site.region.toLowerCase().includes(siteSearch)
+                    );
+                    
+                    if (filteredSites.length > 0) {
+                        showStatus(`✅ Found ${filteredSites.length} sites matching "${siteSearch}".`, 'success');
+                    } else {
+                        showStatus(`❌ No sites found matching "${siteSearch}".`, 'error');
+                    }
+                }
+            } else {
+                // Show all sites
+                filteredSites = [...sitesData];
+                showStatus('✅ Showing all sites.', 'success');
+            }
+            
+            // Update display
+            displayDataOnMap();
+            updateStats();
+        }
+        
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('siteSearch').value = '';
+            
+            // Show all sites
+            filteredSites = [...sitesData];
+            displayDataOnMap();
+            updateStats();
+            
+            showStatus('🔄 Filters reset. Showing all sites.', 'success');
+        }
+        
+        // Update statistics
+        function updateStats() {
+            try {
+                const totalSitesElement = document.getElementById('totalSites');
+                const visibleSitesElement = document.getElementById('visibleSites');
+                const filteredSitesElement = document.getElementById('filteredSites');
+                
+                if (totalSitesElement) {
+                    totalSitesElement.textContent = sitesData.length;
+                }
+                
+                if (visibleSitesElement) {
+                    visibleSitesElement.textContent = filteredSites.length;
+                }
+                
+                if (filteredSitesElement) {
+                    filteredSitesElement.textContent = sitesData.length - filteredSites.length;
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+        });
+        
+        // Route Planner Functions
+        function openRoutePlanner() {
+            document.getElementById('routeModal').style.display = 'flex';
+            // Initialize autocomplete for start and end locations
+            initLocationAutocomplete('startLocation', 'startLocationAutocomplete');
+            initLocationAutocomplete('endLocation', 'endLocationAutocomplete');
+        }
+        
+        function closeRoutePlanner() {
+            document.getElementById('routeModal').style.display = 'none';
+        }
+        
+        function initLocationAutocomplete(inputId, autocompleteId) {
+            const input = document.getElementById(inputId);
+            const autocomplete = document.getElementById(autocompleteId);
+            
+            input.addEventListener('input', function() {
+                const val = this.value;
+                autocomplete.innerHTML = '';
+                
+                if (!val) return false;
+                
+                // Create suggestions for locations
+                const locations = ['Shikarpur', 'Jacobabad', 'Larkana', 'Sukkur', 'Karachi', 'Lahore', 'Islamabad'];
+                const matches = locations.filter(loc => loc.toLowerCase().includes(val.toLowerCase()));
+                
+                matches.forEach(match => {
+                    const item = document.createElement('div');
+                    item.classList.add('autocomplete-item');
+                    item.innerHTML = match;
+                    item.addEventListener('click', function() {
+                        input.value = match;
+                        autocomplete.innerHTML = '';
+                    });
+                    autocomplete.appendChild(item);
+                });
+            });
+        }
+        
+        function searchSites(input) {
+            const val = input.value;
+            const autocomplete = input.nextElementSibling; // The autocomplete div
+            autocomplete.innerHTML = '';
+            
+            if (!val) return false;
+            
+            // Search sites by name or last 4 digits
+            let matches = [];
+            if (/^\d{4}$/.test(val)) {
+                // Search by last 4 digits
+                matches = sitesData.filter(site => site.siteId.slice(-4) === val);
+            } else {
+                // Search by name
+                matches = sitesData.filter(site => 
+                    site.siteId.toLowerCase().includes(val.toLowerCase()) ||
+                    site.subRegion.toLowerCase().includes(val.toLowerCase())
+                );
+            }
+            
+            matches.slice(0, 5).forEach(site => {
+                const item = document.createElement('div');
+                item.classList.add('autocomplete-item');
+                item.innerHTML = `${site.siteId} - ${site.subRegion}`;
+                item.addEventListener('click', function() {
+                    input.value = site.siteId;
+                    autocomplete.innerHTML = '';
+                });
+                autocomplete.appendChild(item);
+            });
+        }
+        
+        function addSiteField() {
+            const container = document.getElementById('routeSitesContainer');
+            const siteItem = document.createElement('div');
+            siteItem.className = 'route-site-item';
+            siteItem.innerHTML = `
+                <input type="text" class="route-site-input" placeholder="Enter site ID or name (last 4 digits supported)" oninput="searchSites(this)">
+                <button class="remove-site-btn" onclick="removeSite(this)">×</button>
+                <div class="autocomplete-items"></div>
+            `;
+            container.appendChild(siteItem);
+        }
+        
+        function removeSite(button) {
+            const siteItem = button.parentElement;
+            if (document.querySelectorAll('.route-site-item').length > 1) {
+                siteItem.remove();
+            } else {
+                // If it's the last one, just clear the input
+                siteItem.querySelector('input').value = '';
+            }
+        }
+        
+        // Calculate distance between two points using Haversine formula
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const d = R * c; // Distance in km
+            return d;
+        }
+        
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+        
+        // Find site by ID
+        function findSiteById(siteId) {
+            return sitesData.find(site => site.siteId === siteId);
+        }
+        
+        // Calculate route distance
+        function calculateRouteDistance() {
+            const startLocation = document.getElementById('startLocation').value;
+            const endLocation = document.getElementById('endLocation').value;
+            const siteInputs = document.querySelectorAll('.route-site-input');
+            
+            // Get selected sites
+            const selectedSites = [];
+            siteInputs.forEach(input => {
+                if (input.value) {
+                    const site = findSiteById(input.value) || sitesData.find(s => s.siteId.slice(-4) === input.value);
+                    if (site) selectedSites.push(site);
+                }
+            });
+            
+            if (selectedSites.length === 0) {
+                alert('Please select at least one site to visit.');
+                return;
+            }
+            
+            // For simplicity, we'll use a fixed location for Shikarpur
+            // In a real implementation, you would geocode these locations
+            const shikarpurCoords = { lat: 27.9554, lng: 68.6382 }; // Approximate coords for Shikarpur
+            const jacobabadCoords = { lat: 28.3333, lng: 68.4167 }; // Approximate coords for Jacobabad
+            const larkanaCoords = { lat: 27.5597, lng: 68.2126 }; // Approximate coords for Larkana
+            const sukkurCoords = { lat: 27.7012, lng: 68.8619 }; // Approximate coords for Sukkur
+            
+            // Get coordinates for start location
+            let startCoords = shikarpurCoords; // Default
+            if (startLocation.toLowerCase().includes('jacob')) {
+                startCoords = jacobabadCoords;
+            } else if (startLocation.toLowerCase().includes('larkana')) {
+                startCoords = larkanaCoords;
+            } else if (startLocation.toLowerCase().includes('sukkur')) {
+                startCoords = sukkurCoords;
+            }
+            
+            // Get coordinates for end location
+            let endCoords = shikarpurCoords; // Default
+            if (endLocation.toLowerCase().includes('jacob')) {
+                endCoords = jacobabadCoords;
+            } else if (endLocation.toLowerCase().includes('larkana')) {
+                endCoords = larkanaCoords;
+            } else if (endLocation.toLowerCase().includes('sukkur')) {
+                endCoords = sukkurCoords;
+            }
+            
+            let totalDistance = 0;
+            let routePath = [];
+            let routePoints = [];
+            
+            // Start from start location
+            let currentLocation = startCoords;
+            routePath.push(startLocation);
+            routePoints.push([startCoords.lat, startCoords.lng]);
+            
+            // Visit each selected site
+            for (let i = 0; i < selectedSites.length; i++) {
+                const site = selectedSites[i];
+                const distance = calculateDistance(
+                    currentLocation.lat, 
+                    currentLocation.lng, 
+                    site.lat, 
+                    site.lng
+                );
+                totalDistance += distance;
+                currentLocation = { lat: site.lat, lng: site.lng };
+                routePath.push(site.siteId);
+                routePoints.push([site.lat, site.lng]);
+            }
+            
+            // End at end location
+            const finalDistance = calculateDistance(
+                currentLocation.lat, 
+                currentLocation.lng, 
+                endCoords.lat, 
+                endCoords.lng
+            );
+            totalDistance += finalDistance;
+            routePath.push(endLocation);
+            routePoints.push([endCoords.lat, endCoords.lng]);
+            
+            // Display results
+            document.getElementById('totalSitesVisiting').textContent = selectedSites.length;
+            document.getElementById('totalRouteDistance').textContent = totalDistance.toFixed(2) + ' km';
+            document.getElementById('routePath').textContent = routePath.join(' → ');
+            document.getElementById('routeResult').classList.add('show');
+            
+            // Update header summary
+            document.getElementById('routeDistance').textContent = totalDistance.toFixed(2) + ' km';
+            
+            // Show and draw route map
+            drawRouteMap(routePoints);
+        }
+        
+        // Draw route on map
+        function drawRouteMap(routePoints) {
+            // Create route map container
+            const routeMapContainer = document.getElementById('routeMapContainer');
+            routeMapContainer.classList.add('show');
+            
+            // Force a reflow to ensure the container is rendered
+            routeMapContainer.offsetHeight;
+            
+            // Initialize route map if not already done
+            if (!window.routeMap) {
+                // Create the map immediately (container is now visible)
+                window.routeMap = L.map('routeMap').setView([27.7052, 68.8584], 8);
+                
+                // Add OpenStreetMap tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(window.routeMap);
+                
+                // Draw the route
+                drawRouteOnMap(routePoints);
+            } else {
+                // Map already exists, just draw the route
+                drawRouteOnMap(routePoints);
+                // Force map resize to ensure proper rendering
+                setTimeout(() => {
+                    window.routeMap.invalidateSize();
+                }, 50);
+            }
+        }
+        
+        // Draw route on an existing map
+        function drawRouteOnMap(routePoints) {
+            // Clear existing layers
+            if (window.routePolyline) {
+                window.routeMap.removeLayer(window.routePolyline);
+            }
+            if (window.routeMarkers) {
+                window.routeMarkers.forEach(marker => window.routeMap.removeLayer(marker));
+            }
+            
+            // Create polyline for route
+            window.routePolyline = L.polyline(routePoints, {color: '#3498db', weight: 5}).addTo(window.routeMap);
+            
+            // Add markers for start, sites, and end
+            window.routeMarkers = [];
+            if (routePoints.length > 0) {
+                // Start marker
+                const startMarker = L.marker(routePoints[0]).addTo(window.routeMap)
+                    .bindPopup('Start Location')
+                    .openPopup();
+                window.routeMarkers.push(startMarker);
+                
+                // Site markers (middle points)
+                for (let i = 1; i < routePoints.length - 1; i++) {
+                    const siteMarker = L.marker(routePoints[i]).addTo(window.routeMap)
+                        .bindPopup(`Site ${i}`);
+                    window.routeMarkers.push(siteMarker);
+                }
+                
+                // End marker
+                const endMarker = L.marker(routePoints[routePoints.length - 1]).addTo(window.routeMap)
+                    .bindPopup('End Location');
+                window.routeMarkers.push(endMarker);
+            }
+            
+            // Fit map to route bounds
+            window.routeMap.fitBounds(window.routePolyline.getBounds().pad(0.1));
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('routeModal');
+            if (event.target === modal) {
+                closeRoutePlanner();
+            }
+        }
+        
+        // Clear route plan
+        function clearRoutePlan() {
+            // Reset route summary
+            document.getElementById('routeDistance').textContent = '0 km';
+            
+            // Hide route result if visible
+            document.getElementById('routeResult').classList.remove('show');
+            
+            // Hide route map if visible
+            document.getElementById('routeMapContainer').classList.remove('show');
+            
+            // Clear route map if it exists
+            if (window.routeMap) {
+                // Clear existing layers
+                if (window.routePolyline) {
+                    window.routeMap.removeLayer(window.routePolyline);
+                    window.routePolyline = null;
+                }
+                if (window.routeMarkers) {
+                    window.routeMarkers.forEach(marker => window.routeMap.removeLayer(marker));
+                    window.routeMarkers = [];
+                }
+            }
+            
+            // Reset form fields
+            document.getElementById('startLocation').value = '';
+            document.getElementById('endLocation').value = '';
+            
+            // Clear site inputs
+            const siteInputs = document.querySelectorAll('.route-site-input');
+            siteInputs.forEach(input => input.value = '');
+            
+            // Keep only one site field
+            const siteContainer = document.getElementById('routeSitesContainer');
+            siteContainer.innerHTML = `
+                <div class="route-site-item">
+                    <input type="text" class="route-site-input" placeholder="Enter site ID or name (last 4 digits supported)" oninput="searchSites(this)">
+                    <button class="remove-site-btn" onclick="removeSite(this)">×</button>
+                    <div class="autocomplete-items"></div>
+                </div>
+            `;
+            
+            showStatus('✅ Route plan cleared', 'success');
+        }
+        
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('route-location-input') && 
+                !e.target.classList.contains('route-site-input') &&
+                !e.target.classList.contains('autocomplete-item')) {
+                document.querySelectorAll('.autocomplete-items').forEach(el => {
+                    el.innerHTML = '';
+                });
+            }
+        })
+        
+        // Fix for route map visibility issue
+        function fixRouteMapVisibility() {
+            if (window.routeMap) {
+                // Force map resize to ensure proper rendering
+                setTimeout(() => {
+                    window.routeMap.invalidateSize();
+                }, 100);
+            }
+        }
+        
+        // Call fix when window is resized
+        window.addEventListener('resize', fixRouteMapVisibility);
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analyze Rectifier Fan Data</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: white; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        button { padding: 10px 15px; margin: 5px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>Analyze Rectifier Fan Data</h1>
+    <button onclick="analyzeRectifierFanData()">Analyze Rectifier Fan.xlsx</button>
+    <button onclick="clearDebug()">Clear Debug Info</button>
+    
+    <div id="debugOutput"></div>
+
+    <script>
+        function addDebug(message, type = 'info') {
+            const debugOutput = document.getElementById('debugOutput');
+            const div = document.createElement('div');
+            div.className = 'section ' + type;
+            div.innerHTML = message;
+            debugOutput.appendChild(div);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+        
+        function clearDebug() {
+            document.getElementById('debugOutput').innerHTML = '';
+        }
+        
+        function analyzeRectifierFanData() {
+            addDebug('<h2>Loading and Analyzing Rectifier Fan.xlsx</h2>');
+            
+            fetch('Rectifier Fan.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('<strong>File loaded successfully</strong>');
+                    addDebug('Sheet name: ' + firstSheetName);
+                    addDebug('Total rows: ' + jsonData.length);
+                    addDebug('Total columns: ' + (jsonData.length > 0 ? jsonData[0].length : 0));
+                    
+                    // Show first 5 rows with all columns
+                    addDebug('<h3>First 5 rows:</h3><pre>' + JSON.stringify(jsonData.slice(0, 5), null, 2) + '</pre>');
+                    
+                    // Detect header row
+                    let startIndex = 0;
+                    if (jsonData.length > 0) {
+                        const firstRow = jsonData[0];
+                        const firstCell = firstRow[0] || '';
+                        if (typeof firstCell === 'string' && firstCell.toLowerCase().includes('site')) {
+                            startIndex = 1;
+                            addDebug('Header row detected at index 0');
+                        } else {
+                            addDebug('No header row detected');
+                        }
+                    }
+                    
+                    addDebug('Start index for data: ' + startIndex);
+                    
+                    // Analyze columns
+                    if (jsonData.length > startIndex) {
+                        const sampleRow = jsonData[startIndex];
+                        addDebug('<h3>Sample data row analysis:</h3>');
+                        for (let i = 0; i < Math.min(sampleRow.length, 15); i++) {
+                            addDebug(`Column ${String.fromCharCode(65 + i)} (index ${i}): ${sampleRow[i] || 'empty'}`);
+                        }
+                    }
+                })
+                .catch(error => {
+                    addDebug('Error loading Rectifier Fan.xlsx: ' + error.message, 'error');
+                });
+        }
+    </script>
+</body>
+</html>

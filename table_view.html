@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Table View - RMS Dashboard</title>
+    <script src="sound_manager.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            overflow: auto; /* Changed from potential hidden to auto */
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow: visible; /* Ensure container doesn't clip content */
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Algerian', 'Impact', 'Arial Black', sans-serif;
+            font-size: 24px;
+            color: #00008B;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .filter-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-info h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .filter-info p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: visible; /* Changed from hidden to visible to ensure content is not clipped */
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .record-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .table-scroll {
+            max-height: 600px;
+            overflow: auto; /* Changed from potential hidden to auto for scrollability */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            color: #333;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 14px;
+            color: #555;
+        }
+
+        tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .export-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+            transition: transform 0.2s;
+        }
+
+        .export-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            width: 300px;
+            margin-right: 10px;
+        }
+
+        .search-box:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .controls {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="goBack()">← Back to Dashboard</button>
+
+        <div class="header">
+            <h1>📊 DETAILED DATA TABLE VIEW</h1>
+            <p>Remote Monitoring System - RMS Offline Sites</p>
+        </div>
+
+        <div class="filter-info" id="filterInfo">
+            <h2 id="filterTitle">Loading data...</h2>
+            <p id="filterDescription"></p>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h3>Data Records</h3>
+                <div>
+                    <span class="record-count" id="recordCount">0 Records</span>
+                    <button class="export-button" onclick="exportToExcel()">📥 Export to Excel</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search in table..." onkeyup="filterTable()">
+                <div>
+                    <span id="filteredCount" style="color: #666; font-size: 14px;"></span>
+                </div>
+            </div>
+
+            <div class="table-scroll">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Site Id</th>
+                            <th>Sub Region</th>
+                            <th>Cluster</th>
+                            <th>Team Lead</th>
+                            <th>ES POC</th>
+                            <th>Offline Date</th>
+                            <th>Days Passed</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="8" class="loading">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let filterCriteria = {};
+
+        // Get filter parameters from URL
+        function getUrlParameters() {
+            const params = new URLSearchParams(window.location.search);
+            const result = {
+                type: params.get('type'),
+                region: params.get('region'),
+                domain: params.get('domain'),
+                aging: params.get('aging'),
+                reason: params.get('reason')
+            };
+            
+            // Decode URL parameters properly
+            if (result.reason) {
+                result.reason = decodeURIComponent(result.reason);
+            }
+            if (result.region) {
+                result.region = decodeURIComponent(result.region);
+            }
+            
+            console.log('Parsed URL parameters:', result);
+            return result;
+        }
+
+        // Go back to previous page
+        function goBack() {
+            // Go back in browser history (same window)
+            window.history.back();
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const storedData = localStorage.getItem('rmsExcelData');
+            if (!storedData) {
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="8" class="no-data">No data available. Please upload data on the main page first.</td></tr>';
+                return;
+            }
+
+            try {
+                const jsonData = JSON.parse(storedData);
+                if (!jsonData || jsonData.length < 2) {
+                    document.getElementById('tableBody').innerHTML = 
+                        '<tr><td colspan="8" class="no-data">No data to display.</td></tr>';
+                    return;
+                }
+
+                // Get filter criteria
+                filterCriteria = getUrlParameters();
+                console.log('Filter criteria loaded:', filterCriteria);
+                console.log('Total raw data rows:', jsonData.length);
+
+                // Process and filter data
+                processData(jsonData);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="8" class="no-data">Error loading data.</td></tr>';
+            }
+        }
+
+        // Process Excel data
+        function processData(jsonData) {
+            const header = jsonData[0];
+            allData = [];
+
+            // Find column indices (0-based) - CORRECTED MAPPING BASED ON ACTUAL EXCEL STRUCTURE
+            const siteIdCol = 0;      // Column A - Site Id
+            const subRegionCol = 2;   // Column C - Sub Region  
+            const clusterCol = 3;     // Column D - Cluster
+            const teamLeadCol = 4;    // Column E - Team Lead
+            const esPocCol = 5;       // Column F - ES POC
+            const offlineDateCol = 6; // Column G - Offline Date
+            const agingCol = 7;       // Column H - Days Passed (Aging)
+            const reasonCol = 9;      // Column J - Reason
+            const domainCol = 11;     // Column L - Domain
+
+            // Process each row (skip header)
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length < 10) continue;
+
+                // Format offline date as DD-MMM-YY
+                let formattedDate = '';
+                if (row[offlineDateCol]) {
+                    try {
+                        const dateValue = row[offlineDateCol];
+                        let date;
+                        
+                        // Handle Excel serial date number
+                        if (typeof dateValue === 'number') {
+                            // Excel date serial number (days since 1900-01-01)
+                            date = new Date((dateValue - 25569) * 86400 * 1000);
+                        } else if (typeof dateValue === 'string') {
+                            date = new Date(dateValue);
+                        } else {
+                            date = new Date(dateValue);
+                        }
+                        
+                        if (!isNaN(date.getTime())) {
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const month = monthNames[date.getMonth()];
+                            const year = String(date.getFullYear()).slice(-2);
+                            formattedDate = `${day}-${month}-${year}`;
+                        } else {
+                            formattedDate = String(dateValue);
+                        }
+                    } catch (e) {
+                        formattedDate = String(row[offlineDateCol]);
+                    }
+                }
+
+                // Format days passed as rounded integer (zero decimal)
+                let formattedDaysPassed = '';
+                if (row[agingCol] !== undefined && row[agingCol] !== null && row[agingCol] !== '') {
+                    const daysValue = parseFloat(row[agingCol]);
+                    if (!isNaN(daysValue)) {
+                        formattedDaysPassed = Math.round(daysValue).toString();
+                    } else {
+                        formattedDaysPassed = String(row[agingCol]);
+                    }
+                }
+
+                const record = {
+                    siteId: row[siteIdCol] || '',
+                    subRegion: row[subRegionCol] || '',
+                    cluster: row[clusterCol] || '',
+                    teamLead: row[teamLeadCol] || '',
+                    esPoc: row[esPocCol] || '',
+                    offlineDate: formattedDate,
+                    daysPassed: formattedDaysPassed,
+                    reason: row[reasonCol] || '',
+                    domain: row[domainCol] || ''
+                };
+
+                // Apply filters
+                if (shouldIncludeRecord(record)) {
+                    allData.push(record);
+                }
+            }
+
+            filteredData = [...allData];
+            console.log('Final processed data:', {
+                totalRecords: allData.length,
+                filterCriteria: filterCriteria,
+                sampleRecord: allData[0]
+            });
+            updateFilterInfo();
+            displayData();
+        }
+
+        // Check if record matches filter criteria
+        function shouldIncludeRecord(record) {
+            const criteria = filterCriteria;
+            
+            console.log('Checking record against criteria:', {
+                record: record,
+                criteria: criteria
+            });
+
+            // Special handling for prolonged sites - show top 7 from pre-filtered data
+            if (criteria.type === 'prolonged') {
+                // For prolonged sites, we'll filter in the processData function
+                // This is just a placeholder to allow all records through initially
+                return true;
+            }
+
+            // Region filter
+            if (criteria.region && criteria.region !== 'all') {
+                const regionStr = String(record.cluster || record.subRegion || '').trim();
+                const filterRegion = criteria.region;
+                
+                // Handle "Jacob Abad" variations
+                const matchRegion = regionStr === filterRegion ||
+                    (filterRegion === 'Jacob Abad' && (regionStr === 'Jacobabad' || regionStr === 'Jacob Abad')) ||
+                    (filterRegion === 'Jacobabad' && (regionStr === 'Jacob Abad' || regionStr === 'Jacobabad'));
+                
+                if (!matchRegion) return false;
+            }
+
+            // Domain filter (Enfra/SMS LD)
+            if (criteria.domain) {
+                const domainStr = String(record.domain || '').trim().toUpperCase();
+                if (criteria.domain === 'enfra' && !domainStr.includes('ENFRA')) return false;
+                if (criteria.domain === 'smsld' && !domainStr.includes('SMS LD') && !domainStr.includes('SMS-LD') && !domainStr.includes('SMSLD')) return false;
+            }
+
+            // Aging filter
+            if (criteria.aging) {
+                const daysPassed = String(record.daysPassed || '').trim();
+                const daysNum = parseInt(daysPassed);
+                
+                // Check if aging is a range or exact value
+                const agingFilter = criteria.aging;
+                let matchesAging = false;
+                
+                console.log('Aging filter check:', {
+                    daysPassed: daysPassed,
+                    daysNum: daysNum,
+                    agingFilter: agingFilter
+                });
+                
+                if (!isNaN(daysNum)) {
+                    // Handle aging ranges
+                    if (agingFilter === '1 - 05 Days' || agingFilter === '1-05 Days') {
+                        matchesAging = daysNum >= 1 && daysNum <= 5;
+                    } else if (agingFilter === '6 - 15 Days' || agingFilter === '6-15 Days') {
+                        matchesAging = daysNum >= 6 && daysNum <= 15;
+                    } else if (agingFilter === '16 - 30 Days' || agingFilter === '16-30 Days') {
+                        matchesAging = daysNum >= 16 && daysNum <= 30;
+                    } else if (agingFilter === '31 - 100 Days' || agingFilter === '31-100 Days') {
+                        matchesAging = daysNum >= 31 && daysNum <= 100;
+                    } else if (agingFilter === '> 100 Days' || agingFilter === '>100 Days') {
+                        matchesAging = daysNum > 100;
+                    } else {
+                        // Exact match for numeric values
+                        matchesAging = daysPassed === agingFilter;
+                    }
+                } else {
+                    // If daysPassed is not numeric, try exact match
+                    matchesAging = daysPassed === agingFilter;
+                }
+                
+                if (!matchesAging) {
+                    console.log('Aging filter rejected record:', {
+                        daysPassed: daysPassed,
+                        daysNum: daysNum,
+                        agingFilter: agingFilter
+                    });
+                    return false;
+                }
+            }
+
+            // Reason filter
+            if (criteria.reason) {
+                const reason = String(record.reason || '').trim();
+                const filterReason = String(criteria.reason).trim();
+                
+                console.log('Comparing reasons:', {
+                    recordReason: reason,
+                    filterReason: filterReason,
+                    match: reason === filterReason
+                });
+                
+                // Try exact match first, then case-insensitive match
+                const reasonMatch = reason === filterReason || 
+                                  reason.toLowerCase() === filterReason.toLowerCase();
+                
+                if (!reasonMatch) {
+                    console.log('Reason filter rejected record:', {
+                        recordReason: reason,
+                        filterReason: filterReason
+                    });
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Update filter information display
+        function updateFilterInfo() {
+            let title = 'All Offline Sites';
+            let description = 'Showing all RMS offline sites data';
+
+            if (filterCriteria.type === 'region') {
+                title = `${filterCriteria.region || 'Regional'} Sites`;
+                description = `Showing offline sites in ${filterCriteria.region} region`;
+                if (filterCriteria.domain) {
+                    description += ` (${filterCriteria.domain === 'enfra' ? 'Enfra Domain' : 'SMS LD Domain'})`;
+                }
+            } else if (filterCriteria.type === 'domain') {
+                title = `${filterCriteria.domain === 'enfra' ? 'Enfra' : 'SMS LD'} Domain Sites`;
+                description = `Showing offline sites on ${filterCriteria.domain === 'enfra' ? 'Enfra' : 'SMS LD'} domain`;
+            } else if (filterCriteria.type === 'aging') {
+                title = `Sites with ${filterCriteria.aging} Days Aging`;
+                description = `Showing sites offline for ${filterCriteria.aging} days`;
+                if (filterCriteria.domain) {
+                    description += ` (${filterCriteria.domain === 'enfra' ? 'Enfra Domain' : 'SMS LD Domain'})`;
+                }
+                if (filterCriteria.region) {
+                    description += ` in ${filterCriteria.region} region`;
+                }
+            } else if (filterCriteria.type === 'reason') {
+                title = `Sites: ${filterCriteria.reason}`;
+                description = `Showing sites with offline reason: ${filterCriteria.reason}`;
+                if (filterCriteria.region) {
+                    description += ` in ${filterCriteria.region} region`;
+                }
+            } else if (filterCriteria.type === 'card') {
+                if (filterCriteria.domain === 'enfra') {
+                    title = 'Total Offline on Enfra Domain';
+                } else if (filterCriteria.domain === 'smsld') {
+                    title = 'Total Offline on SMS LD Domain';
+                } else {
+                    title = 'Total RMS Offline';
+                }
+                description = 'Showing all offline sites for this category';
+                if (filterCriteria.region) {
+                    description += ` in ${filterCriteria.region} region`;
+                }
+            } else if (filterCriteria.type === 'prolonged') {
+                title = 'Top 7 Prolonged Offline Sites';
+                description = 'Showing the top 7 sites with the highest number of days passed';
+            }
+
+            document.getElementById('filterTitle').textContent = title;
+            document.getElementById('filterDescription').textContent = description;
+        }
+
+        // Display data in table
+        function displayData() {
+            const tbody = document.getElementById('tableBody');
+            
+            // Special handling for prolonged sites - show only top 7
+            let displayData = filteredData;
+            if (filterCriteria.type === 'prolonged') {
+                // Sort by days passed in descending order and take top 7
+                displayData = [...filteredData]
+                    .sort((a, b) => parseFloat(b.daysPassed) - parseFloat(a.daysPassed))
+                    .slice(0, 7);
+            }
+            
+            if (displayData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No records match the selected criteria.</td></tr>';
+                document.getElementById('recordCount').textContent = '0 Records';
+                document.getElementById('filteredCount').textContent = '';
+                return;
+            }
+
+            let html = '';
+            displayData.forEach(record => {
+                html += `
+                    <tr>
+                        <td>${escapeHtml(record.siteId)}</td>
+                        <td>${escapeHtml(record.subRegion)}</td>
+                        <td>${escapeHtml(record.cluster)}</td>
+                        <td>${escapeHtml(record.teamLead)}</td>
+                        <td>${escapeHtml(record.esPoc)}</td>
+                        <td>${escapeHtml(record.offlineDate)}</td>
+                        <td>${escapeHtml(record.daysPassed)}</td>
+                        <td>${escapeHtml(record.reason)}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            document.getElementById('recordCount').textContent = `${displayData.length} Record${displayData.length !== 1 ? 's' : ''}`;
+            document.getElementById('filteredCount').textContent = '';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Filter table based on search
+        function filterTable() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredData = [...allData];
+            } else {
+                filteredData = allData.filter(record => {
+                    return Object.values(record).some(value => 
+                        String(value).toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
+
+            displayData();
+            
+            if (searchTerm) {
+                document.getElementById('filteredCount').textContent = 
+                    `Filtered: ${filteredData.length} of ${allData.length} records`;
+            }
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            // Prepare data for export
+            const exportData = [
+                ['Site Id', 'Sub Region', 'Cluster', 'Team Lead', 'ES POC', 'Offline Date', 'Days Passed', 'Reason']
+            ];
+
+            filteredData.forEach(record => {
+                exportData.push([
+                    record.siteId,
+                    record.subRegion,
+                    record.cluster,
+                    record.teamLead,
+                    record.esPoc,
+                    record.offlineDate,
+                    record.daysPassed,
+                    record.reason
+                ]);
+            });
+
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'RMS Data');
+
+            // Generate filename
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `RMS_Data_${timestamp}.xlsx`;
+
+            // Save file
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>

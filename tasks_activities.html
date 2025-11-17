@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks & Activities - RMS Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Back button */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .back-button i {
+            font-size: 24px;
+            color: #fff;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: white;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Tasks grid - two rows */
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Task button - smaller size */
+        .task-button {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            animation: floating 3s ease-in-out infinite;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .task-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+
+        /* Different colors for each button */
+        .task-1::before { background: linear-gradient(90deg, #ff8a00, #da1b60); }
+        .task-2::before { background: linear-gradient(90deg, #00c9ff, #92fe9d); }
+        .task-3::before { background: linear-gradient(90deg, #f857a6, #ff5858); }
+        .task-4::before { background: linear-gradient(90deg, #3a7bd5, #00d2ff); }
+        .task-5::before { background: linear-gradient(90deg, #56ab2f, #a8e063); }
+        .task-6::before { background: linear-gradient(90deg, #6a11cb, #2575fc); }
+        .task-7::before { background: linear-gradient(90deg, #ff416c, #ff4b2b); }
+        .task-8::before { background: linear-gradient(90deg, #8e2de2, #4a00e0); }
+        .task-9::before { background: linear-gradient(90deg, #2193b0, #6dd5ed); }
+        .task-10::before { background: linear-gradient(90deg, #ff5e62, #ff9966); }
+        .task-11::before { background: linear-gradient(90deg, #eea849, #f46b45); }
+        .task-12::before { background: linear-gradient(90deg, #bf00ff, #8e2de2); }
+
+        .task-button:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .task-icon {
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+        }
+
+        .task-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .task-description {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: rgba(255, 215, 0, 0.2);
+            color: gold;
+            border: 1px solid gold;
+        }
+
+        .status-in-progress {
+            background: rgba(0, 195, 255, 0.2);
+            color: #00c3ff;
+            border: 1px solid #00c3ff;
+        }
+
+        .status-completed {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .construction-badge {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.2);
+            color: gold;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            border: 1px solid gold;
+        }
+
+        /* Floating animation */
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Staggered animation delays */
+        .task-1 { animation-delay: 0s; }
+        .task-2 { animation-delay: 0.1s; }
+        .task-3 { animation-delay: 0.2s; }
+        .task-4 { animation-delay: 0.3s; }
+        .task-5 { animation-delay: 0.4s; }
+        .task-6 { animation-delay: 0.5s; }
+        .task-7 { animation-delay: 0.6s; }
+        .task-8 { animation-delay: 0.7s; }
+        .task-9 { animation-delay: 0.8s; }
+        .task-10 { animation-delay: 0.9s; }
+        .task-11 { animation-delay: 1.0s; }
+        .task-12 { animation-delay: 1.1s; }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .tasks-grid {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .tasks-grid {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                gap: 12px;
+            }
+            
+            .task-button {
+                padding: 12px;
+                min-height: 110px;
+            }
+            
+            .task-icon {
+                font-size: 1.5rem;
+                margin-bottom: 10px;
+            }
+            
+            .task-title {
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+            }
+            
+            .task-description {
+                font-size: 0.7rem;
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .back-button {
+                width: 50px;
+                height: 50px;
+                top: 15px;
+                left: 15px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            
+            .tasks-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(6, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back button -->
+        <div class="back-button" onclick="window.location.href='welcome.html'" title="Back to Welcome Page">
+            <i class="fas fa-arrow-left"></i>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-tasks"></i> Tasks & Activities</h1>
+            <p>Manage and track all system tasks and activities</p>
+        </div>
+
+        <!-- Tasks grid with 12 buttons in two rows -->
+        <div class="tasks-grid">
+            <!-- Task 1: DC CTs & SPD -->
+            <div class="task-button task-1" onclick="window.location.href='dc_cts_database.html'">
+                <div class="task-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="task-title">DC CTs & SPD</div>
+                <div class="task-description">Manage DC Current Transformers & Surge Protection Devices</div>
+                <div class="task-status status-in-progress">In Progress</div>
+            </div>
+
+            <!-- Task 2: Task 02 -->
+            <div class="task-button task-2" onclick="showConstructionMessage('Task 02')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 02</div>
+                <div class="task-description">System maintenance task</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 3: Under Construction -->
+            <div class="task-button task-3" onclick="showConstructionMessage('Task 3')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 3</div>
+                <div class="task-description">Equipment calibration</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 4: Under Construction -->
+            <div class="task-button task-4" onclick="showConstructionMessage('Task 4')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 4</div>
+                <div class="task-description">Network optimization</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 5: Under Construction -->
+            <div class="task-button task-5" onclick="showConstructionMessage('Task 5')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 5</div>
+                <div class="task-description">Data backup procedure</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 6: Under Construction -->
+            <div class="task-button task-6" onclick="showConstructionMessage('Task 6')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 6</div>
+                <div class="task-description">Security update</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 7: Under Construction -->
+            <div class="task-button task-7" onclick="showConstructionMessage('Task 7')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 7</div>
+                <div class="task-description">Performance tuning</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 8: Under Construction -->
+            <div class="task-button task-8" onclick="showConstructionMessage('Task 8')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 8</div>
+                <div class="task-description">System diagnostics</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 9: Under Construction -->
+            <div class="task-button task-9" onclick="showConstructionMessage('Task 9')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 9</div>
+                <div class="task-description">Report generation</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 10: Under Construction -->
+            <div class="task-button task-10" onclick="showConstructionMessage('Task 10')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 10</div>
+                <div class="task-description">User access review</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 11: Under Construction -->
+            <div class="task-button task-11" onclick="showConstructionMessage('Task 11')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 11</div>
+                <div class="task-description">Database optimization</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+
+            <!-- Task 12: Under Construction -->
+            <div class="task-button task-12" onclick="showConstructionMessage('Task 12')">
+                <div class="task-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="task-title">Task 12</div>
+                <div class="task-description">System monitoring</div>
+                <div class="construction-badge">Under Construction</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show construction message
+        function showConstructionMessage(taskName) {
+            alert(`🚧 ${taskName} is currently under construction.\n\nThis task module will be available soon.\nPlease check back later.`);
+        }
+    </script>
+</body>
+</html>

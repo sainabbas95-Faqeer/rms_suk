@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column Mapping - Before & After Comparison</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #00008B;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .section {
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        .before {
+            background-color: #fff5f5;
+            border-color: #dc3545;
+        }
+        .after {
+            background-color: #f0fff4;
+            border-color: #28a745;
+        }
+        .section h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        .before h3 {
+            color: #dc3545;
+        }
+        .after h3 {
+            color: #28a745;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .changes {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .changes h3 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .changes ul {
+            margin: 10px 0;
+        }
+        .changes li {
+            margin: 5px 0;
+        }
+        .excel-visual {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .excel-col {
+            text-align: center;
+            padding: 10px 5px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .excel-col.header {
+            background: #667eea;
+            color: white;
+        }
+        .excel-col.used {
+            background: #28a745;
+            color: white;
+        }
+        .excel-col.unused {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 TABLE VIEW COLUMN MAPPING</h1>
+        <p class="subtitle">Before & After Comparison - Fixed on 2025-10-12</p>
+
+        <div class="changes">
+            <h3>✅ What Was Fixed</h3>
+            <ul>
+                <li><strong>Team Lead:</strong> Column F(5) → <span class="highlight">Column E(4)</span></li>
+                <li><strong>ES POC:</strong> Column G(6) → <span class="highlight">Column F(5)</span></li>
+                <li><strong>Offline Date:</strong> Column H(7) → <span class="highlight">Column G(6)</span> + Date formatting (DD-MMM-YY)</li>
+                <li><strong>Days Passed:</strong> Column I(8) → <span class="highlight">Column H(7)</span> + Rounded to integer</li>
+                <li><strong>Reason:</strong> Column K(10) → <span class="highlight">Column J(9)</span></li>
+            </ul>
+        </div>
+
+        <div class="comparison">
+            <div class="section before">
+                <h3>❌ BEFORE (Incorrect)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Table Header</th>
+                            <th>Excel Column</th>
+                            <th>Index</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Site Id</td>
+                            <td>Column A</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Sub Region</td>
+                            <td>Column C</td>
+                            <td>2</td>
+                        </tr>
+                        <tr>
+                            <td>Cluster</td>
+                            <td>Column D</td>
+                            <td>3</td>
+                        </tr>
+                        <tr class="error">
+                            <td>Team Lead</td>
+                            <td>Column F ❌</td>
+                            <td>5</td>
+                        </tr>
+                        <tr class="error">
+                            <td>ES POC</td>
+                            <td>Column G ❌</td>
+                            <td>6</td>
+                        </tr>
+                        <tr class="error">
+                            <td>Offline Date</td>
+                            <td>Column H ❌</td>
+                            <td>7</td>
+                        </tr>
+                        <tr class="error">
+                            <td>Days Passed</td>
+                            <td>Column I ❌</td>
+                            <td>8</td>
+                        </tr>
+                        <tr class="error">
+                            <td>Reason</td>
+                            <td>Column K ❌</td>
+                            <td>10</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section after">
+                <h3>✅ AFTER (Correct)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Table Header</th>
+                            <th>Excel Column</th>
+                            <th>Index</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Site Id</td>
+                            <td>Column A</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Sub Region</td>
+                            <td>Column C</td>
+                            <td>2</td>
+                        </tr>
+                        <tr>
+                            <td>Cluster</td>
+                            <td>Column D</td>
+                            <td>3</td>
+                        </tr>
+                        <tr class="success">
+                            <td>Team Lead</td>
+                            <td>Column E ✅</td>
+                            <td>4</td>
+                        </tr>
+                        <tr class="success">
+                            <td>ES POC</td>
+                            <td>Column F ✅</td>
+                            <td>5</td>
+                        </tr>
+                        <tr class="success">
+                            <td>Offline Date</td>
+                            <td>Column G ✅</td>
+                            <td>6</td>
+                        </tr>
+                        <tr class="success">
+                            <td>Days Passed</td>
+                            <td>Column H ✅</td>
+                            <td>7</td>
+                        </tr>
+                        <tr class="success">
+                            <td>Reason</td>
+                            <td>Column J ✅</td>
+                            <td>9</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3 style="color: #00008B; margin-top: 40px; text-align: center;">Excel Column Layout</h3>
+        <div class="excel-visual">
+            <div class="excel-col header">A</div>
+            <div class="excel-col header">B</div>
+            <div class="excel-col header">C</div>
+            <div class="excel-col header">D</div>
+            <div class="excel-col header">E</div>
+            <div class="excel-col header">F</div>
+            <div class="excel-col header">G</div>
+            <div class="excel-col header">H</div>
+            <div class="excel-col header">I</div>
+            <div class="excel-col header">J</div>
+            <div class="excel-col header">K</div>
+            <div class="excel-col header">L</div>
+            
+            <div class="excel-col used">Site Id</div>
+            <div class="excel-col unused">-</div>
+            <div class="excel-col used">Sub Region</div>
+            <div class="excel-col used">Cluster</div>
+            <div class="excel-col used">Team Lead</div>
+            <div class="excel-col used">ES POC</div>
+            <div class="excel-col used">Offline Date</div>
+            <div class="excel-col used">Days Passed</div>
+            <div class="excel-col unused">-</div>
+            <div class="excel-col used">Reason</div>
+            <div class="excel-col unused">-</div>
+            <div class="excel-col used">Domain</div>
+        </div>
+
+        <div class="changes" style="background: #fff3cd; border: 2px solid #ffc107;">
+            <h3 style="color: #856404;">📝 Additional Formatting Enhancements</h3>
+            <ul>
+                <li><strong>Offline Date:</strong> Now formatted as <span class="highlight">DD-MMM-YY</span> (e.g., 15-Jan-25, 01-Feb-25)</li>
+                <li><strong>Days Passed:</strong> Now shown as <span class="highlight">rounded integers</span> (e.g., 45.7 → 46, 30.2 → 30)</li>
+                <li><strong>Excel Date Handling:</strong> Automatically converts Excel serial numbers to readable dates</li>
+                <li><strong>Error Handling:</strong> Graceful fallback for invalid data</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 10px;">
+            <h3 style="color: #0066cc; margin-top: 0;">🧪 Test the Fix</h3>
+            <p style="margin: 10px 0;">Open the main dashboard, upload DB.xlsx, and click on any chart to verify the corrected table data.</p>
+            <div style="margin-top: 15px;">
+                <button onclick="window.open('column_l_3d_chart.html', '_blank')" 
+                        style="padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                               color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; 
+                               box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                    📊 Open Dashboard
+                </button>
+                <button onclick="window.open('debug_reasons.html', '_blank')" 
+                        style="padding: 12px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                               color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; 
+                               margin-left: 10px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);">
+                    🔍 Debug Tool
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple SPD Test</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Simple SPD Test</h1>
+    <button onclick="testLoad()">Test Load SPD.xlsx</button>
+    <div id="result"></div>
+
+    <script>
+        function testLoad() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Loading...';
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    result.innerHTML = 'Response status: ' + response.status;
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    result.innerHTML = 'File loaded successfully, size: ' + data.byteLength + ' bytes';
+                    
+                    // Try to parse
+                    try {
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        result.innerHTML += '<br>Workbook parsed successfully';
+                        result.innerHTML += '<br>Sheet names: ' + JSON.stringify(workbook.SheetNames);
+                    } catch (e) {
+                        result.innerHTML += '<br>Error parsing: ' + e.message;
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = 'Error: ' + error.message;
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Test</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #fileInput {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel File Test</h1>
+        <p>This page tests if we can read Excel files correctly.</p>
+        
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        
+        <div id="status"></div>
+        <div id="output"></div>
+        
+        <button onclick="testLocationsFile()" style="margin-top: 20px; padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Test Locations.xlsx File
+        </button>
+    </div>
+
+    <script>
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function displayData(data) {
+            const outputEl = document.getElementById('output');
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                outputEl.innerHTML = '<p>No data found</p>';
+                return;
+            }
+            
+            let html = '<h3>Data Preview:</h3><table border="1" style="width:100%; border-collapse: collapse;">';
+            
+            // Show first 10 rows
+            const rowsToShow = Math.min(data.length, 10);
+            for (let i = 0; i < rowsToShow; i++) {
+                const row = data[i];
+                html += '<tr>';
+                if (row && Array.isArray(row)) {
+                    // Show first 5 columns
+                    for (let j = 0; j < Math.min(row.length, 5); j++) {
+                        html += `<td style="padding: 5px; border: 1px solid #ddd;">${row[j] || ''}</td>`;
+                    }
+                    // Add empty cells if row has less than 5 columns
+                    for (let j = row.length; j < 5; j++) {
+                        html += '<td style="padding: 5px; border: 1px solid #ddd;"></td>';
+                    }
+                } else {
+                    html += '<td colspan="5">Invalid row data</td>';
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            
+            if (data.length > 10) {
+                html += `<p><em>Showing first 10 of ${data.length} rows</em></p>`;
+            }
+            
+            outputEl.innerHTML = html;
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('Please select a valid Excel file (.xlsx or .xls)', 'error');
+                return;
+            }
+            
+            showStatus('Reading file...', 'status');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    showStatus(`Success! Loaded ${jsonData.length} rows`, 'success');
+                    displayData(jsonData);
+                } catch (error) {
+                    showStatus(`Error: ${error.message}`, 'error');
+                    console.error('Error reading file:', error);
+                }
+            };
+            reader.onerror = function() {
+                showStatus('Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
+        });
+        
+        function testLocationsFile() {
+            showStatus('Fetching Locations.xlsx...', 'status');
+            
+            fetch('XLSX Files/Locations.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    showStatus(`Success! Loaded ${jsonData.length} rows from Locations.xlsx`, 'success');
+                    displayData(jsonData);
+                    
+                    // Show column information
+                    if (jsonData.length > 0) {
+                        const headerRow = jsonData[0];
+                        let columnInfo = '<h3>Column Mapping:</h3><ul>';
+                        columnInfo += `<li>Column A (0): ${headerRow[0] || 'N/A'}</li>`;
+                        columnInfo += `<li>Column B (1): ${headerRow[1] || 'N/A'}</li>`;
+                        columnInfo += `<li>Column C (2): ${headerRow[2] || 'N/A'}</li>`;
+                        columnInfo += `<li>Column D (3): ${headerRow[3] || 'N/A'}</li>`;
+                        columnInfo += `<li>Column E (4): ${headerRow[4] || 'N/A'}</li>`;
+                        columnInfo += '</ul>';
+                        
+                        document.getElementById('output').innerHTML += columnInfo;
+                    }
+                })
+                .catch(error => {
+                    showStatus(`Error fetching Locations.xlsx: ${error.message}`, 'error');
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+</html>

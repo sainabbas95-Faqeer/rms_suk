@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excel Data Debug</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Excel Data Debugger</h1>
+    <div id="output"></div>
+    <script>
+        fetch('DB.xlsx')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('DB.xlsx not found (' + response.status + ')');
+                }
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                const output = document.getElementById('output');
+                
+                output.innerHTML += '<h2>Sheet Names:</h2><ul>';
+                workbook.SheetNames.forEach(name => {
+                    output.innerHTML += `<li>${name}</li>`;
+                });
+                output.innerHTML += '</ul>';
+                
+                // Show data from first sheet
+                if (workbook.SheetNames.length > 0) {
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    output.innerHTML += `<h2>Data from "${firstSheetName}" (${jsonData.length} rows):</h2>`;
+                    
+                    // Show first 10 rows
+                    const table = document.createElement('table');
+                    table.border = '1';
+                    table.style.borderCollapse = 'collapse';
+                    
+                    for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                        const row = document.createElement('tr');
+                        const rowData = jsonData[i];
+                        
+                        if (rowData && Array.isArray(rowData)) {
+                            for (let j = 0; j < Math.min(15, rowData.length); j++) {
+                                const cell = document.createElement('td');
+                                cell.style.padding = '5px';
+                                cell.style.border = '1px solid #ccc';
+                                cell.textContent = rowData[j] !== null && rowData[j] !== undefined ? rowData[j] : '';
+                                row.appendChild(cell);
+                            }
+                        }
+                        
+                        table.appendChild(row);
+                    }
+                    
+                    output.appendChild(table);
+                }
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

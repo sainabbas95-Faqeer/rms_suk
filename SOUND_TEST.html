@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound & Animation Test - RMS Dashboard</title>
+    <script src="sound_manager.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .test-section p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .test-button:active {
+            transform: translateY(-1px);
+        }
+
+        .success-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .warning-btn {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+
+        .danger-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .mute-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(238, 90, 111, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .mute-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(238, 90, 111, 0.6);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+            color: #555;
+        }
+
+        .feature-list li:before {
+            content: "✅ ";
+            color: #28a745;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <button id="soundToggle" class="mute-toggle" title="Mute/Unmute Sounds">🔊</button>
+
+    <div class="container">
+        <h1>🔊 Sound & Animation Test</h1>
+        <p class="subtitle">Test the new sound and animation features for RMS Dashboard</p>
+
+        <div class="test-section">
+            <h2>🎵 Click Sound Test</h2>
+            <p>Click any button below to hear the click sound:</p>
+            <button class="test-button">Click Me!</button>
+            <button class="test-button success-btn">Success Sound</button>
+            <button class="test-button warning-btn">Warning Sound</button>
+            <button class="test-button danger-btn">Danger Sound</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎼 Graph Animation Sound Test</h2>
+            <p>Click the button below to hear the sweet graph animation sound:</p>
+            <button class="test-button" onclick="testGraphSound()">Play Graph Sound 🎵</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🔇 Mute/Unmute Test</h2>
+            <p>Click the 🔊 button in the top-right corner to toggle mute/unmute.</p>
+            <p><strong>Current Status:</strong> <span id="muteStatus" class="status-indicator status-enabled">Sounds Enabled</span></p>
+            <button class="test-button" onclick="checkMuteStatus()">Check Mute Status</button>
+        </div>
+
+        <div class="test-section">
+            <h2>✨ Features Implemented</h2>
+            <ul class="feature-list">
+                <li>Click sounds on all interactive elements</li>
+                <li>Sweet harmonious sounds on graph animations</li>
+                <li>Mute/unmute toggle on main page (persists across pages)</li>
+                <li>Smooth motion animations on all charts</li>
+                <li>Professional easing functions (elastic, bounce)</li>
+                <li>Web Audio API for high-quality sounds</li>
+                <li>Zero external dependencies for sounds</li>
+                <li>Cross-browser compatible</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Pages with Sound Support</h2>
+            <ul class="feature-list">
+                <li>Main Page (column_l_3d_chart.html) - With mute toggle</li>
+                <li>Jacob Abad Regional Page</li>
+                <li>Larkana Regional Page</li>
+                <li>Sukkur Regional Page</li>
+                <li>Table View Page</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Next Steps</h2>
+            <p><strong>To test on actual pages:</strong></p>
+            <ol style="color: #555; line-height: 1.8; margin-left: 20px;">
+                <li>Open <strong>column_l_3d_chart.html</strong> (main page)</li>
+                <li>Upload your Excel file (DB.xlsx)</li>
+                <li>Click around - all buttons should play sounds</li>
+                <li>Watch charts animate with sweet sounds</li>
+                <li>Toggle mute/unmute using the top-right button</li>
+                <li>Navigate to regional pages - sounds persist</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function testGraphSound() {
+            if (typeof soundManager !== 'undefined' && soundManager) {
+                soundManager.playGraphSound();
+            } else {
+                alert('Sound manager not loaded!');
+            }
+        }
+
+        function checkMuteStatus() {
+            if (typeof soundManager !== 'undefined' && soundManager) {
+                const isMuted = soundManager.isMuted;
+                const statusEl = document.getElementById('muteStatus');
+                if (isMuted) {
+                    statusEl.textContent = 'Sounds Muted';
+                    statusEl.className = 'status-indicator status-disabled';
+                    alert('🔇 Sounds are currently MUTED');
+                } else {
+                    statusEl.textContent = 'Sounds Enabled';
+                    statusEl.className = 'status-indicator status-enabled';
+                    alert('🔊 Sounds are currently ENABLED');
+                }
+            } else {
+                alert('Sound manager not loaded!');
+            }
+        }
+
+        // Update mute status on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkMuteStatus, 500);
+        });
+    </script>
+</body>
+</html>

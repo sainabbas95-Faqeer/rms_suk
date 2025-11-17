@@ -1,0 +1,3619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column L Analysis - Enfra & SMS LD 3D Pie Chart</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-3d"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Try multiple CDN sources for PptxGenJS -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" onerror="loadPptxBackup()"></script>
+    <script>
+        // Backup CDN loader for PptxGenJS
+        function loadPptxBackup() {
+            console.log('Primary CDN failed, trying backup...');
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+            script.onerror = function() {
+                console.error('Both CDN sources failed for PptxGenJS');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
+    <script src="sound_manager.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header .logo {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 60px;
+            width: auto;
+        }
+
+        .header .header-content {
+            flex: 1;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Algerian', 'Impact', 'Arial Black', sans-serif;
+            font-size: 24px;
+            margin-bottom: 0;
+            color: #00008B;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .header .date-info {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 12px;
+            color: #00008B;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .footer-text {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .visit-counter {
+            position: fixed;
+            bottom: 30px;
+            right: 10px;
+            font-size: 12px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        .header p {
+            text-align: center;
+            color: #666;
+            margin: 5px 0 0 0;
+            font-size: 12px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(238, 90, 111, 0.4);
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(238, 90, 111, 0.6);
+        }
+
+        .back-button:active {
+            transform: translateY(-1px);
+        }
+
+        .results-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            transform: perspective(1000px) rotateX(0deg);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: perspective(1000px) rotateX(-5deg) translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 2px solid #28a745;
+        }
+
+        .error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 2px solid #dc3545;
+        }
+
+        .loading {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 2px solid #ffc107;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .pie-3d {
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+            width: 100%;
+            height: 100%;
+        }
+
+        .left-buttons {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-btn {
+            width: 80px;
+            height: 60px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1) translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .btn-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .btn-main { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+
+        /* Sound Toggle Button - Removed as per requirements */
+        /* .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 100px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(238, 90, 111, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(238, 90, 111, 0.6);
+        }
+
+        .sound-toggle:active {
+            transform: scale(0.95);
+        } */
+
+        /* Export Buttons Section */
+        .export-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .export-section h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 35px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .export-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .export-btn-ppt {
+            background: linear-gradient(135deg, #d35400 0%, #e67e22 100%);
+        }
+
+        .export-btn-ppt:hover {
+            box-shadow: 0 12px 30px rgba(211, 84, 0, 0.6);
+        }
+
+        .export-btn-excel {
+            background: linear-gradient(135deg, #1e7e34 0%, #28a745 100%);
+        }
+
+        .export-btn-excel:hover {
+            box-shadow: 0 12px 30px rgba(30, 126, 52, 0.6);
+        }
+
+        .export-btn-pdf {
+            background: linear-gradient(135deg, #c82333 0%, #dc3545 100%);
+        }
+
+        .export-btn-pdf:hover {
+            box-shadow: 0 12px 30px rgba(200, 35, 51, 0.6);
+        }
+
+        .export-btn .icon {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Funny Back Button -->
+        <button class="back-button" onclick="window.location.href='welcome.html'" title="Go back to welcome page">🤪 Back to Safety!</button>
+
+        <div class="left-buttons">
+            <button class="action-btn btn-1" onclick="openRegionData('Jacob Abad')" title="Jacob Abad Data">Jacob Abad</button>
+            <button class="action-btn btn-2" onclick="openRegionData('Larkana')" title="Larkana Data">Larkana</button>
+            <button class="action-btn btn-3" onclick="openRegionData('Sukkur')" title="Sukkur Data">Sukkur</button>
+        </div>
+
+        <div class="header">
+            <img src="Logo.jpeg" alt="RMS Logo" class="logo">
+            <div class="date-info" id="dateInfo">Data till<br><span id="displayDate"></span><br><span id="displayTime" style="color: red; font-weight: bold;"></span></div>
+            <div class="header-content">
+                <h1>RMS OFFLINE SUMMARY</h1>
+                <p>Remote Monitoring System - Data Analysis Dashboard</p>
+            </div>
+        </div>
+
+        <!-- Footer text -->
+        <div class="footer-text">Database created by - Abbas Enterprises - Lakhi - 2025</div>
+        
+        <!-- Visit counter -->
+        <div class="visit-counter" id="visitCounter" onclick="openVisitHistory()">Page Visits: <span id="visitCount">0</span></div>
+
+
+
+        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" style="display: none;" />
+        <div id="uploadStatus" style="display: none;"></div>
+
+        <div class="results-section" id="resultsSection">
+            
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated here -->
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">Enfra Vs SMS LD</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="pieChart" class="pie-3d"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">RMS Offline Count Cluster Wise (Enfra Domain)</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="enframiRegionBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">RMS Offline Count Cluster Wise (SMS LD Domain)</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="smsLdRegionBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">RMS Offline Count with Aging (Enfra Domain)</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="enfraAgingBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">RMS Offline Count with Aging (SMS LD Domain)</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="smsLdAgingBarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 15px; color: #333; font-size: 14px; text-align: center; font-weight: bold;">RMS Offline Reasons</h3>
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="columnKBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Buttons Section -->
+            <div class="export-section">
+                <h2>📥 Export Dashboard</h2>
+                <div class="export-buttons">
+                    <button class="export-btn export-btn-ppt" onclick="exportToPPT()" title="Export complete presentation with charts and data">
+                        <span class="icon">📊</span>
+                        <span>Export to PowerPoint</span>
+                    </button>
+                    <button class="export-btn export-btn-excel" onclick="exportToExcel()" title="Export all data to Excel spreadsheet">
+                        <span class="icon">📗</span>
+                        <span>Export to Excel</span>
+                    </button>
+                    <button class="export-btn export-btn-pdf" onclick="exportToPDF()" title="Export dashboard as PDF document">
+                        <span class="icon">📄</span>
+                        <span>Export to PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set the date in header (previous day) and current time
+        function setPreviousDate() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[yesterday.getDay()];
+            const monthName = months[yesterday.getMonth()];
+            const date = yesterday.getDate();
+            const year = yesterday.getFullYear();
+            
+            const formattedDate = `${dayName}, ${monthName} ${date < 10 ? '0' + date : date}, ${year}`;
+            document.getElementById('displayDate').textContent = formattedDate;
+            
+            // Update time
+            updateTime();
+        }
+        
+        // Function to update current time
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            const timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
+            const timeElement = document.getElementById('displayTime');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+        
+        // Call on page load
+        setPreviousDate();
+        
+        // Update time every second
+        setInterval(updateTime, 1000);
+        
+        let analysisData = {};
+        let chartInstance = null;
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        // Add click event to logo for file upload
+        document.addEventListener('DOMContentLoaded', function() {
+            const logo = document.querySelector('.header .logo');
+            if (logo) {
+                logo.style.cursor = 'pointer';
+                logo.title = 'Click to upload Excel file';
+                logo.addEventListener('click', function() {
+                    // Create a temporary file input if one doesn't exist
+                    let tempFileInput = document.getElementById('tempFileInput');
+                    if (!tempFileInput) {
+                        try {
+                            tempFileInput = document.createElement('input');
+                            tempFileInput.type = 'file';
+                            tempFileInput.id = 'tempFileInput';
+                            tempFileInput.accept = '.xlsx,.xls';
+                            tempFileInput.style.display = 'none';
+                            document.body.appendChild(tempFileInput);
+                            
+                            tempFileInput.addEventListener('change', function(e) {
+                                if (e.target.files && e.target.files.length > 0) {
+                                    try {
+                                        handleFile(e.target.files[0]);
+                                    } catch (handleError) {
+                                        console.error('Error handling file:', handleError);
+                                        showStatus('❌ Error processing selected file: ' + handleError.message, 'error');
+                                    }
+                                } else {
+                                    showStatus('ℹ️ No file selected', 'loading');
+                                }
+                            });
+                        } catch (createError) {
+                            console.error('Error creating file input:', createError);
+                            showStatus('❌ Error creating file upload interface: ' + createError.message, 'error');
+                            return;
+                        }
+                    }
+                    try {
+                        tempFileInput.click();
+                    } catch (clickError) {
+                        console.error('Error clicking file input:', clickError);
+                        showStatus('❌ Error opening file dialog: ' + clickError.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('Logo element not found for file upload');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            try {
+                if (e.target.files && e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                } else {
+                    showStatus('ℹ️ No file selected', 'loading');
+                }
+            } catch (error) {
+                console.error('Error in file input change handler:', error);
+                showStatus('❌ Error handling file selection: ' + error.message, 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const uploadStatus = document.getElementById('uploadStatus');
+            if (uploadStatus) {
+                uploadStatus.innerHTML = `<div class="status ${type}">${message}</div>`;
+                uploadStatus.style.display = 'block';
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                return;
+            }
+
+            showStatus('🔄 Analyzing Excel file...', 'loading');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    
+                    // Check if file is empty
+                    if (data.length === 0) {
+                        showStatus('❌ The selected file is empty', 'error');
+                        return;
+                    }
+                    
+                    // Try to parse the Excel file
+                    let workbook;
+                    try {
+                        workbook = XLSX.read(data, { type: 'array' });
+                    } catch (parseError) {
+                        console.error('Error parsing Excel file:', parseError);
+                        showStatus('❌ Error parsing Excel file. Please ensure it\'s a valid .xlsx or .xls file: ' + parseError.message, 'error');
+                        return;
+                    }
+                    
+                    // Get the first sheet
+                    if (workbook.SheetNames.length === 0) {
+                        showStatus('❌ The Excel file contains no sheets', 'error');
+                        return;
+                    }
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert to JSON
+                    let jsonData;
+                    try {
+                        jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    } catch (convertError) {
+                        console.error('Error converting sheet to JSON:', convertError);
+                        showStatus('❌ Error converting Excel data: ' + convertError.message, 'error');
+                        return;
+                    }
+                    
+                    if (jsonData.length === 0) {
+                        showStatus('❌ The Excel file appears to be empty', 'error');
+                        return;
+                    }
+
+                    // Store data in localStorage for persistence across navigation
+                    try {
+                        localStorage.setItem('rmsExcelData', JSON.stringify(jsonData));
+                        localStorage.setItem('rmsDataLoaded', 'true');
+                        console.log('Data saved to localStorage');
+                    } catch (storageError) {
+                        console.warn('Could not save to localStorage:', storageError);
+                        showStatus('⚠️ Warning: Could not save data to localStorage (data will be lost on page refresh): ' + storageError.message, 'error');
+                    }
+
+                    // Analyze Column L (index 11, which is the 12th column)
+                    analyzeColumnL(jsonData);
+                    analyzeRegionData(jsonData);
+                    analyzeAgingData(jsonData);
+                    analyzeColumnKData(jsonData);
+                    
+                    // Display results after both analyses complete
+                    displayResults();
+                    
+                } catch (error) {
+                    console.error('Unexpected error in handleFile:', error);
+                    showStatus('❌ Unexpected error processing Excel file: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error('FileReader error:', error);
+                showStatus('❌ Error reading file: ' + error.message, 'error');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        let regionData = {};
+        let agingData = {};
+        let columnKData = {};
+        let rawData = [];
+
+        function analyzeColumnL(data) {
+            showStatus('🔍 Analyzing Column L for Enfra & SMS LD...', 'loading');
+            
+            try {
+                // Validate data first
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    throw new Error('Invalid data format or empty dataset');
+                }
+                
+                console.log('Data structure:', data);
+                console.log('First few rows:', data.slice(0, 5));
+                
+                rawData = data; // Store for region analysis
+                let enfraCoun = 0;
+                let smsLdCount = 0;
+                let otherCount = 0;
+                let emptyCount = 0;
+                
+                // Skip header row, analyze from row 1 onwards
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    // Check if row exists and has enough columns
+                    if (!row || !Array.isArray(row)) {
+                        console.warn(`Row ${i} is invalid:`, row);
+                        emptyCount++;
+                        continue;
+                    }
+                    
+                    const columnLValue = row[11]; // Column L is index 11 (0-based)
+                    
+                    if (!columnLValue || columnLValue === '' || columnLValue === null || columnLValue === undefined) {
+                        emptyCount++;
+                    } else {
+                        const valueStr = String(columnLValue).trim().toUpperCase();
+                        
+                        if (valueStr.includes('ENFRA')) {
+                            enfraCoun++;
+                        } else if (valueStr.includes('SMS LD') || valueStr.includes('SMS-LD') || valueStr.includes('SMSLD')) {
+                            smsLdCount++;
+                        } else {
+                            otherCount++;
+                        }
+                    }
+                }
+                
+                // Store analysis data
+                analysisData = {
+                    enfra: enfraCoun,
+                    smsLd: smsLdCount,
+                    others: otherCount,
+                    empty: emptyCount,
+                    total: data ? data.length - 1 : 0 // Exclude header
+                };
+                
+                console.log('Analysis results:', analysisData);
+                
+                showStatus('✅ Analysis processed successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showStatus('❌ Error analyzing data: ' + error.message, 'error');
+                
+                // Show debug information
+                console.log('Data received:', data);
+                if (data && data.length > 0) {
+                    console.log('First row:', data[0]);
+                    console.log('Second row:', data[1]);
+                    console.log('Data type:', typeof data);
+                }
+            }
+        }
+
+        function analyzeRegionData(data) {
+            // Analyze Column D (Region) with Column L (Enfra/SMS LD)
+            try {
+                // Validate data first
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    console.warn('Invalid data for region analysis');
+                    return;
+                }
+                
+                regionData = {
+                    enfra: {},
+                    smsLd: {},
+                    others: {}
+                };
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    // Check if row exists and has enough columns
+                    if (!row || !Array.isArray(row) || row.length < 12) {
+                        console.warn(`Row ${i} invalid or insufficient columns:`, row);
+                        continue;
+                    }
+                    
+                    const region = row && row.length > 3 ? row[3] : null; // Column D is index 3
+                    const columnLValue = row && row.length > 11 ? row[11] : null; // Column L is index 11
+                    
+                    if (!region || !columnLValue) continue;
+                    
+                    const regionStr = String(region).trim();
+                    const valueStr = String(columnLValue).trim().toUpperCase();
+                    
+                    // Skip if region or value is empty
+                    if (!regionStr || !valueStr) continue;
+                    
+                    let category = 'others';
+                    if (valueStr.includes('ENFRA')) {
+                        category = 'enfra';
+                    } else if (valueStr.includes('SMS LD') || valueStr.includes('SMS-LD') || valueStr.includes('SMSLD')) {
+                        category = 'smsLd';
+                    }
+                    
+                    if (!regionData[category][regionStr]) {
+                        regionData[category][regionStr] = 0;
+                    }
+                    regionData[category][regionStr]++;
+                }
+                
+                console.log('Region analysis complete:', regionData);
+                
+            } catch (error) {
+                console.error('Region analysis error:', error);
+                // Initialize empty region data to prevent further errors
+                regionData = {
+                    enfra: {},
+                    smsLd: {},
+                    others: {}
+                };
+            }
+        }
+
+        function analyzeAgingData(data) {
+            // Analyze Column I (Aging) with Column L (Enfra/SMS LD)
+            try {
+                // Validate data first
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    console.warn('Invalid data for aging analysis');
+                    return;
+                }
+                
+                agingData = {
+                    enfra: {},
+                    smsLd: {},
+                    others: {}
+                };
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    // Check if row exists and has enough columns
+                    if (!row || !Array.isArray(row) || row.length < 12) {
+                        console.warn(`Row ${i} invalid or insufficient columns:`, row);
+                        continue;
+                    }
+                    
+                    const aging = row && row.length > 8 ? row[8] : null; // Column I is index 8 (0-based)
+                    const columnLValue = row && row.length > 11 ? row[11] : null; // Column L is index 11
+                    
+                    if (!aging || !columnLValue) continue;
+                    
+                    const agingStr = String(aging).trim();
+                    const valueStr = String(columnLValue).trim().toUpperCase();
+                    
+                    // Skip if aging or value is empty
+                    if (!agingStr || !valueStr) continue;
+                    
+                    let category = 'others';
+                    if (valueStr.includes('ENFRA')) {
+                        category = 'enfra';
+                    } else if (valueStr.includes('SMS LD') || valueStr.includes('SMS-LD') || valueStr.includes('SMSLD')) {
+                        category = 'smsLd';
+                    }
+                    
+                    if (!agingData[category][agingStr]) {
+                        agingData[category][agingStr] = 0;
+                    }
+                    agingData[category][agingStr]++;
+                }
+                
+                console.log('Aging analysis complete:', agingData);
+                
+            } catch (error) {
+                console.error('Aging analysis error:', error);
+                // Initialize empty aging data to prevent further errors
+                agingData = {
+                    enfra: {},
+                    smsLd: {},
+                    others: {}
+                };
+            }
+        }
+
+        function analyzeColumnKData(data) {
+            // Analyze Column K categories
+            try {
+                // Validate data first
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    console.warn('Invalid data for Column K analysis');
+                    return;
+                }
+                
+                columnKData = {};
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    // Check if row exists and has enough columns
+                    if (!row || !Array.isArray(row) || row.length < 11) {
+                        console.warn(`Row ${i} invalid or insufficient columns:`, row);
+                        continue;
+                    }
+                    
+                    const columnKValue = row && row.length > 10 ? row[10] : null; // Column K is index 10 (0-based)
+                    
+                    if (!columnKValue) continue;
+                    
+                    const valueStr = String(columnKValue).trim();
+                    
+                    // Skip if value is empty
+                    if (!valueStr) continue;
+                    
+                    if (!columnKData[valueStr]) {
+                        columnKData[valueStr] = 0;
+                    }
+                    columnKData[valueStr]++;
+                }
+                
+                console.log('Column K analysis complete:', columnKData);
+                
+            } catch (error) {
+                console.error('Column K analysis error:', error);
+                // Initialize empty column K data to prevent further errors
+                columnKData = {};
+            }
+        }
+
+        function displayResults() {
+            console.log('Displaying results...');
+            console.log('analysisData:', analysisData);
+            console.log('regionData:', regionData);
+            console.log('agingData:', agingData);
+            console.log('columnKData:', columnKData);
+            
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Calculate total RMS offline (Enfra + SMS LD)
+            const totalRmsOffline = (analysisData && analysisData.enfra || 0) + (analysisData && analysisData.smsLd || 0);
+            
+            // Pre-load the count for prolong offline sites
+            loadProlongOfflineCount();
+            
+            // Populate stats cards with click handlers
+            const statsGrid = document.getElementById('statsGrid');
+            if (statsGrid) {
+                statsGrid.innerHTML = `
+                    <div class="stat-card" onclick="openTableView('card', 'enfra')" style="cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.enfra || 0}</div>
+                        <div class="stat-label">Total Offline on<br>Enfra Domain</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'smsld')" style="cursor: pointer; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.smsLd || 0}</div>
+                        <div class="stat-label">Total Offline on<br>SMS LD Domain</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'all')" style="cursor: pointer; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${totalRmsOffline}</div>
+                        <div class="stat-label">Total RMS Offline</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'total')" style="cursor: pointer; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.total || 0}</div>
+                        <div class="stat-label">Total Sites</div>
+                    </div>
+                    <div class="stat-card" onclick="showTop10ProlongOffline()" style="cursor: pointer; background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);" title="Click to view prolong RMS offline sites">
+                        <div class="stat-number" id="top10Count">0</div>
+                        <div class="stat-label">Prolong RMS Offline<br>30+ Days</div>
+                    </div>
+                `;
+            }
+            
+            // Create 3D pie chart
+            create3DPieChart();
+            
+            // Create Enfra regional bar chart (all clusters)
+            createEnframiRegionalBarChart();
+            
+            // Create SMS LD regional bar chart (all clusters)
+            createSmsLdRegionalBarChart();
+            
+            // Create Enfra aging bar chart
+            createEnfraAgingBarChart();
+            
+            // Create SMS LD aging bar chart
+            createSmsLdAgingBarChart();
+            
+            // Create Column K bar chart
+            createColumnKBarChart();
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to show top 10 prolong offline sites (30+ days)
+        function showTop10ProlongOffline() {
+            console.log('Showing top 10 prolong offline sites...');
+            
+            // Try multiple paths for DB.xlsx file
+            const possiblePaths = [
+                './XLSX Files/DB.xlsx',
+                'XLSX Files/DB.xlsx',
+                '../XLSX Files/DB.xlsx',
+                'DB.xlsx',
+                './DB.xlsx'
+            ];
+            
+            // Function to try loading from a path
+            function tryLoadDB(pathIndex) {
+                if (pathIndex >= possiblePaths.length) {
+                    alert('Could not load DB.xlsx - all paths exhausted');
+                    return;
+                }
+                
+                const path = possiblePaths[pathIndex];
+                console.log('Trying to load DB.xlsx from:', path);
+                
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`DB.xlsx not found at ${path} (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('DB.xlsx file loaded successfully from:', path);
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log('DB.xlsx data processed, row count:', jsonData.length);
+                        
+                        // Process data to find prolong offline sites (30+ days) based on column H (index 7)
+                        const prolongSites = [];
+                        
+                        // Process rows (skip header)
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            
+                            if (!row || row.length < 8) continue;
+                            
+                            const siteId = row[0] || '';
+                            const agingData = row[7] || ''; // Column H (0-indexed, so index 7)
+                            
+                            // Skip rows with missing required data
+                            if (!siteId) continue;
+                            
+                            // Parse aging data (assuming it's a number)
+                            const agingValue = parseFloat(agingData);
+                            
+                            // Only count sites with 30+ days aging
+                            if (!isNaN(agingValue) && agingValue >= 30) {
+                                prolongSites.push({
+                                    siteId: siteId,
+                                    aging: agingValue
+                                });
+                            }
+                        }
+                        
+                        console.log('Prolong offline sites (30+ days) found:', prolongSites.length);
+                        
+                        // Sort sites by aging in descending order
+                        prolongSites.sort((a, b) => b.aging - a.aging);
+                        
+                        // Get top 10 sites
+                        const top10Sites = prolongSites.slice(0, 10);
+                        
+                        console.log('Top 10 prolong offline sites:', top10Sites);
+                        
+                        // Create table to display top 10 sites
+                        const table = document.createElement('table');
+                        table.className = 'top10-table';
+                        
+                        // Create table header
+                        const headerRow = document.createElement('tr');
+                        const siteIdHeader = document.createElement('th');
+                        siteIdHeader.textContent = 'Site ID';
+                        const agingHeader = document.createElement('th');
+                        agingHeader.textContent = 'Aging (Days)';
+                        headerRow.appendChild(siteIdHeader);
+                        headerRow.appendChild(agingHeader);
+                        table.appendChild(headerRow);
+                        
+                        // Create table rows for top 10 sites
+                        top10Sites.forEach(site => {
+                            const row = document.createElement('tr');
+                            const siteIdCell = document.createElement('td');
+                            siteIdCell.textContent = site.siteId;
+                            const agingCell = document.createElement('td');
+                            agingCell.textContent = site.aging;
+                            row.appendChild(siteIdCell);
+                            row.appendChild(agingCell);
+                            table.appendChild(row);
+                        });
+                        
+                        // Clear existing content in results section
+                        const resultsSection = document.getElementById('resultsSection');
+                        resultsSection.innerHTML = '';
+                        
+                        // Append table to results section
+                        resultsSection.appendChild(table);
+                        
+                        // Scroll to results
+                        resultsSection.scrollIntoView({ behavior: 'smooth' });
+                    })
+                    .catch(error => {
+                        console.log('Error loading DB.xlsx from', path, ':', error.message);
+                        // Try next path
+                        tryLoadDB(pathIndex + 1);
+                    });
+            }
+            
+            // Start trying paths
+            tryLoadDB(0);
+        }
+
+        // Alternative function to show top 10 prolong offline sites (no longer needed with the improved version above)
+        function showTop10ProlongOfflineAlt() {
+            // This function is now deprecated as the main function handles multiple paths
+            showTop10ProlongOffline();
+        }
+
+        // Function to load the count of prolong offline sites (30+ days)
+        function loadProlongOfflineCount() {
+            console.log('Loading prolong offline count...');
+            
+            // Try multiple paths for DB.xlsx file
+            const possiblePaths = [
+                './XLSX Files/DB.xlsx',
+                'XLSX Files/DB.xlsx',
+                '../XLSX Files/DB.xlsx',
+                'DB.xlsx',
+                './DB.xlsx'
+            ];
+            
+            // Function to try loading from a path
+            function tryLoadDB(pathIndex) {
+                if (pathIndex >= possiblePaths.length) {
+                    // Don't show alert here as it's just for pre-loading the count
+                    console.log('Could not load DB.xlsx for count - all paths exhausted');
+                    return;
+                }
+                
+                const path = possiblePaths[pathIndex];
+                console.log('Trying to load DB.xlsx from:', path);
+                
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`DB.xlsx not found at ${path} (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('DB.xlsx file loaded successfully for count from:', path);
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log('DB.xlsx data processed for count, row count:', jsonData.length);
+                        
+                        // Process data to find prolong offline sites (30+ days) based on column H (index 7)
+                        let prolongCount = 0;
+                        
+                        // Process rows (skip header)
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            
+                            if (!row || row.length < 8) continue;
+                            
+                            const siteId = row[0] || '';
+                            const agingData = row[7] || ''; // Column H (0-indexed, so index 7)
+                            
+                            // Skip rows with missing required data
+                            if (!siteId) continue;
+                            
+                            // Parse aging data (assuming it's a number)
+                            const agingValue = parseFloat(agingData);
+                            
+                            // Only count sites with 30+ days aging
+                            if (!isNaN(agingValue) && agingValue >= 30) {
+                                prolongCount++;
+                            }
+                        }
+                        
+                        console.log('Prolong offline sites (30+ days) count:', prolongCount);
+                        
+                        // Update the count in the card
+                        const top10CountElement = document.getElementById('top10Count');
+                        if (top10CountElement) {
+                            top10CountElement.textContent = prolongCount;
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error loading DB.xlsx for count from', path, ':', error.message);
+                        // Try next path
+                        tryLoadDB(pathIndex + 1);
+                    });
+            }
+            
+            // Start trying paths
+            tryLoadDB(0);
+        }
+        
+        // Alternative function to load the count (no longer needed with the improved version above)
+        function loadProlongOfflineCountAlt() {
+            // This function is now deprecated as the main function handles multiple paths
+            loadProlongOfflineCount();
+        }
+
+        // ==========================================
+        // EXPORT FUNCTIONS
+        // ==========================================
+
+        // Function to create 3D pie chart
+        function create3DPieChart() {
+            console.log('Creating 3D pie chart...');
+            const canvas = document.getElementById('pieChart');
+            if (!canvas) {
+                console.error('Pie chart canvas not found!');
+                return;
+            }
+            
+            console.log('Canvas element:', canvas);
+            const ctx = canvas.getContext('2d');
+            console.log('Canvas context:', ctx);
+            
+            // Destroy existing chart if any
+            if (chartInstance) {
+                console.log('Destroying existing chart instance');
+                chartInstance.destroy();
+            }
+            
+            // Check if we have data to display
+            const enfraCount = analysisData && analysisData.enfra || 0;
+            const smsLdCount = analysisData && analysisData.smsLd || 0;
+            console.log('Chart data - Enfra:', enfraCount, 'SMS LD:', smsLdCount);
+            
+            // If no data, show a message on the canvas
+            if (enfraCount === 0 && smsLdCount === 0) {
+                console.log('No data to display, showing message on canvas');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            const data = {
+                labels: ['Enfra', 'SMS LD'],
+                datasets: [{
+                    data: [enfraCount, smsLdCount],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',  // Red for Enfra
+                        'rgba(54, 162, 235, 0.8)'   // Blue for SMS LD
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 3,
+                    hoverOffset: 15
+                }]
+            };
+            
+            const config = {
+                type: 'pie',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return {
+                                                text: `${label}: ${value} (${percentage}%)`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].borderColor[i],
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            },
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderWidth: 1
+                        },
+
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 2000,
+                        easing: 'easeInOutElastic',
+                        onComplete: function() {
+                            // Play sweet sound when pie chart animation completes
+                            if (typeof soundManager !== 'undefined' && soundManager) {
+                                setTimeout(() => soundManager.playGraphSound(), 100);
+                            }
+                        }
+                    },
+                    onClick: function(event, elements) {
+                        if (elements && elements.length > 0) {
+                            const elementIndex = elements[0].index;
+                            const domainName = this.data.labels[elementIndex];
+                            console.log('Pie chart clicked:', domainName);
+                            if (domainName && domainName.toLowerCase().includes('enfra')) {
+                                openTableView('card', 'enfra');
+                            } else if (domainName && domainName.toLowerCase().includes('sms')) {
+                                openTableView('card', 'smsld');
+                            }
+                        }
+                    },
+                    elements: {
+                        arc: {
+                            borderWidth: 3,
+                            hoverBorderWidth: 5
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'textInside',
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        
+                        chart.data.datasets.forEach((dataset, datasetIndex) => {
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            if (!meta.data || meta.data.length === 0) return;
+                            
+                            meta.data.forEach((element, index) => {
+                                const dataValue = dataset.data[index];
+                                
+                                // Get the midpoint angle of the arc
+                                const startAngle = element.startAngle;
+                                const endAngle = element.endAngle;
+                                const midAngle = (startAngle + endAngle) / 2;
+                                
+                                // Calculate the position at 60% of the radius
+                                const radius = (element.outerRadius - element.innerRadius) * 0.6 + element.innerRadius;
+                                const x = element.x + Math.cos(midAngle) * radius;
+                                const y = element.y + Math.sin(midAngle) * radius;
+                                
+                                // Draw the count value in white
+                                ctx.fillStyle = 'white';
+                                ctx.font = 'bold 20px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(dataValue, x, y);
+                            });
+                        });
+                        
+                        ctx.restore();
+                    }
+                }]
+            };
+            
+            console.log('Creating new Chart instance with config:', config);
+            chartInstance = new Chart(ctx, config);
+            console.log('Chart instance created:', chartInstance);
+        }
+
+        function downloadChart() {
+            if (chartInstance) {
+                const link = document.createElement('a');
+                link.download = 'column_l_3d_pie_chart.png';
+                link.href = chartInstance.toBase64Image();
+                link.click();
+            }
+        }
+
+        function downloadData() {
+            const analysisReport = `
+Column L Analysis Report
+Generated: ${new Date().toLocaleString()}
+
+SUMMARY:
+========
+Total Records: ${analysisData.total}
+Enfra Count: ${analysisData.enfra}
+SMS LD Count: ${analysisData.smsLd}
+Others Count: ${analysisData.others}
+Empty Cells: ${analysisData.empty}
+
+PERCENTAGES:
+============
+Enfra: ${((analysisData.enfra / analysisData.total) * 100).toFixed(2)}%
+SMS LD: ${((analysisData.smsLd / analysisData.total) * 100).toFixed(2)}%
+Others: ${((analysisData.others / analysisData.total) * 100).toFixed(2)}%
+
+INSIGHTS:
+=========
+- Primary entries are distributed between Enfra and SMS LD
+- Data completeness: ${(((analysisData.total - analysisData.empty) / analysisData.total) * 100).toFixed(2)}%
+- Total analyzed entries: ${analysisData.enfra + analysisData.smsLd + analysisData.others}
+            `;
+            
+            const blob = new Blob([analysisReport], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = 'column_l_analysis_report.txt';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+
+        let smsLdBarChartInstance = null;
+
+        function createSmsLdRegionalChart() {
+            const ctx = document.getElementById('smsLdBarChart').getContext('2d');
+            
+            if (smsLdBarChartInstance) {
+                smsLdBarChartInstance.destroy();
+            }
+            
+            try {
+                // Check if regionData exists and has SMS LD data
+                if (!regionData || !regionData.smsLd || typeof regionData.smsLd !== 'object') {
+                    console.warn('No SMS LD region data available');
+                    // Show message in chart area
+                    ctx.fillStyle = '#666';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD regional data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Focus only on SMS LD regional data
+                const smsLdRegions = Object.entries(regionData.smsLd)
+                    .filter(([region, count]) => region && count > 0) // Filter out empty regions
+                    .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                    .slice(0, 8); // Top 8 regions for better visibility
+                
+                if (smsLdRegions.length === 0) {
+                    console.warn('No SMS LD regions found with data');
+                    // Show message in chart area
+                    ctx.fillStyle = '#666';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD regional data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const regionLabels = smsLdRegions.map(item => item[0]);
+                const regionCounts = smsLdRegions.map(item => item[1]);
+                
+                // Update SMS LD total display
+                const totalElement = document.getElementById('smsLdTotal');
+                if (totalElement) {
+                    totalElement.textContent = `SMS LD Total: ${analysisData.smsLd || 0}`;
+                }
+                
+                const data = {
+                    labels: regionLabels,
+                    datasets: [{
+                        label: '📱 SMS LD Count by Region',
+                        data: regionCounts,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 99, 132, 0.8)', 
+                            'rgba(255, 205, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(199, 199, 199, 0.8)',
+                            'rgba(83, 102, 255, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(255, 205, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(199, 199, 199, 1)',
+                            'rgba(83, 102, 255, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `SMS LD Distribution (${analysisData.smsLd || 0} total)`,
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 10
+                            },
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const total = analysisData.smsLd || 1;
+                                        const percentage = ((count / total) * 100).toFixed(1);
+                                        return `${context.label}: ${count} (${percentage}% of SMS LD)`;
+                                    },
+                                    afterLabel: function(context) {
+                                        const totalRecords = analysisData.total || 1;
+                                        const totalPercentage = ((context.parsed.y / totalRecords) * 100).toFixed(1);
+                                        return `${totalPercentage}% of all records`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        }
+                    }
+                };
+                
+                smsLdBarChartInstance = new Chart(ctx, config);
+                
+                // Log the breakdown for verification
+                console.log('SMS LD Regional Chart created successfully');
+                console.log('SMS LD Regional Breakdown:', regionData.smsLd);
+                
+            } catch (error) {
+                console.error('Error creating SMS LD regional chart:', error);
+                showStatus('❌ Error creating regional chart: ' + error.message, 'error');
+            }
+        }
+
+        let enframiRegionBarChartInstance = null;
+        let smsLdRegionBarChartInstance = null;
+
+        // Function to generate colorful colors for bars
+        function generateColorfulColors(count) {
+            const colors = [
+                'rgba(255, 99, 132, 0.8)',   // Red
+                'rgba(54, 162, 235, 0.8)',   // Blue
+                'rgba(255, 206, 86, 0.8)',   // Yellow
+                'rgba(75, 192, 192, 0.8)',   // Teal
+                'rgba(153, 102, 255, 0.8)',  // Purple
+                'rgba(255, 159, 64, 0.8)',   // Orange
+                'rgba(199, 199, 199, 0.8)',  // Gray
+                'rgba(83, 102, 255, 0.8)',   // Indigo
+                'rgba(255, 99, 255, 0.8)',   // Pink
+                'rgba(99, 255, 132, 0.8)',   // Green
+                'rgba(255, 193, 7, 0.8)',    // Amber
+                'rgba(76, 175, 80, 0.8)',    // Light Green
+                'rgba(33, 150, 243, 0.8)',   // Light Blue
+                'rgba(156, 39, 176, 0.8)',   // Deep Purple
+                'rgba(233, 30, 99, 0.8)',    // Pink Red
+                'rgba(0, 188, 212, 0.8)',    // Cyan
+                'rgba(255, 87, 34, 0.8)',    // Deep Orange
+                'rgba(121, 85, 72, 0.8)',    // Brown
+                'rgba(3, 169, 244, 0.8)',    // Sky Blue
+                'rgba(139, 195, 74, 0.8)'    // Lime
+            ];
+            
+            const borderColors = [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(199, 199, 199, 1)',
+                'rgba(83, 102, 255, 1)',
+                'rgba(255, 99, 255, 1)',
+                'rgba(99, 255, 132, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(76, 175, 80, 1)',
+                'rgba(33, 150, 243, 1)',
+                'rgba(156, 39, 176, 1)',
+                'rgba(233, 30, 99, 1)',
+                'rgba(0, 188, 212, 1)',
+                'rgba(255, 87, 34, 1)',
+                'rgba(121, 85, 72, 1)',
+                'rgba(3, 169, 244, 1)',
+                'rgba(139, 195, 74, 1)'
+            ];
+            
+            const bgColors = [];
+            const bdColors = [];
+            
+            for (let i = 0; i < count; i++) {
+                bgColors.push(colors[i % colors.length]);
+                bdColors.push(borderColors[i % borderColors.length]);
+            }
+            
+            return { backgroundColor: bgColors, borderColor: bdColors };
+        }
+
+        function createEnframiRegionalBarChart() {
+            console.log('=== Creating Enfra Regional Bar Chart ===');
+            console.log('Current regionData:', regionData);
+            console.log('regionData.enfra:', regionData ? regionData.enfra : 'regionData is null/undefined');
+            
+            const canvas = document.getElementById('enframiRegionBarChart');
+            
+            if (!canvas) {
+                console.error('Enfra canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (enframiRegionBarChartInstance) {
+                enframiRegionBarChartInstance.destroy();
+            }
+            
+            try {
+                console.log('Region data:', regionData);
+                console.log('Enfra region data:', regionData.enfra);
+                
+                if (!regionData || !regionData.enfra || typeof regionData.enfra !== 'object') {
+                    console.error('No Enfra region data available');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Enfra regional data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Get all regions and sort by custom order: Jacob Abad, Larkana, Sukkur, then others
+                const regionOrder = ['Jacob Abad', 'Jacobabad', 'Larkana', 'Sukkur'];
+                const allRegions = Object.entries(regionData.enfra)
+                    .filter(([region, count]) => region && count > 0)
+                    .sort((a, b) => {
+                        const indexA = regionOrder.findIndex(r => a[0].includes(r) || r.includes(a[0]));
+                        const indexB = regionOrder.findIndex(r => b[0].includes(r) || r.includes(b[0]));
+                        
+                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                        if (indexA !== -1) return -1;
+                        if (indexB !== -1) return 1;
+                        return b[1] - a[1]; // Sort others by count
+                    });
+                
+                console.log('Enfra regions found:', allRegions.length);
+                
+                if (allRegions.length === 0) {
+                    console.warn('No Enfra regions with data');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Enfra cluster data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const regionLabels = allRegions.map(item => item[0]);
+                const regionCounts = allRegions.map(item => item[1]);
+                
+                console.log('Enfra regions:', regionLabels);
+                console.log('Enfra counts:', regionCounts);
+                
+                // Generate colorful colors for each bar
+                const colors = generateColorfulColors(regionLabels.length);
+                
+                const data = {
+                    labels: regionLabels,
+                    datasets: [{
+                        label: 'Enfra Count',
+                        data: regionCounts,
+                        backgroundColor: colors.backgroundColor,
+                        borderColor: colors.borderColor,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const region = regionLabels[index];
+                                openTableView('region', region, 'enfra');
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const percentage = analysisData.enfra > 0 
+                                            ? ((count / analysisData.enfra) * 100).toFixed(1)
+                                            : 0;
+                                        return `${context.label}: ${count} (${percentage}% of Enfra)`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    color: '#333'
+                                },
+                                title: {
+                                    display: false
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 25,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#333';
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(data, bar.x, bar.y - 5);
+                                });
+                            });
+                        }
+                    }]
+                };
+                
+                enframiRegionBarChartInstance = new Chart(ctx, config);
+                console.log('Enfra Regional Chart created successfully with', allRegions.length, 'clusters');
+                
+            } catch (error) {
+                console.error('Error creating Enfra regional chart:', error);
+                ctx.fillStyle = '#d00';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error creating chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+        }
+
+        function createSmsLdRegionalBarChart() {
+            console.log('=== Creating SMS LD Regional Bar Chart ===');
+            console.log('Current regionData:', regionData);
+            console.log('regionData.smsLd:', regionData ? regionData.smsLd : 'regionData is null/undefined');
+            
+            const canvas = document.getElementById('smsLdRegionBarChart');
+            
+            if (!canvas) {
+                console.error('SMS LD canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (smsLdRegionBarChartInstance) {
+                smsLdRegionBarChartInstance.destroy();
+            }
+            
+            try {
+                console.log('Region data:', regionData);
+                console.log('SMS LD region data:', regionData.smsLd);
+                
+                if (!regionData || !regionData.smsLd || typeof regionData.smsLd !== 'object') {
+                    console.error('No SMS LD region data available');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD regional data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Get all regions and sort by custom order: Jacob Abad, Larkana, Sukkur, then others
+                const regionOrder = ['Jacob Abad', 'Jacobabad', 'Larkana', 'Sukkur'];
+                const allRegions = Object.entries(regionData.smsLd)
+                    .filter(([region, count]) => region && count > 0)
+                    .sort((a, b) => {
+                        const indexA = regionOrder.findIndex(r => a[0].includes(r) || r.includes(a[0]));
+                        const indexB = regionOrder.findIndex(r => b[0].includes(r) || r.includes(b[0]));
+                        
+                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                        if (indexA !== -1) return -1;
+                        if (indexB !== -1) return 1;
+                        return b[1] - a[1]; // Sort others by count
+                    });
+                
+                console.log('SMS LD regions found:', allRegions.length);
+                
+                if (allRegions.length === 0) {
+                    console.warn('No SMS LD regions with data');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD cluster data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const regionLabels = allRegions.map(item => item[0]);
+                const regionCounts = allRegions.map(item => item[1]);
+                
+                console.log('SMS LD regions:', regionLabels);
+                console.log('SMS LD counts:', regionCounts);
+                
+                // Generate colorful colors for each bar
+                const colors = generateColorfulColors(regionLabels.length);
+                
+                const data = {
+                    labels: regionLabels,
+                    datasets: [{
+                        label: 'SMS LD Count',
+                        data: regionCounts,
+                        backgroundColor: colors.backgroundColor,
+                        borderColor: colors.borderColor,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const region = regionLabels[index];
+                                openTableView('region', region, 'smsld');
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const percentage = analysisData.smsLd > 0 
+                                            ? ((count / analysisData.smsLd) * 100).toFixed(1)
+                                            : 0;
+                                        return `${context.label}: ${count} (${percentage}% of SMS LD)`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    color: '#333'
+                                },
+                                title: {
+                                    display: false
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 25,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#333';
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(data, bar.x, bar.y - 5);
+                                });
+                            });
+                        }
+                    }]
+                };
+                
+                smsLdRegionBarChartInstance = new Chart(ctx, config);
+                console.log('SMS LD Regional Chart created successfully with', allRegions.length, 'clusters');
+                
+            } catch (error) {
+                console.error('Error creating SMS LD regional chart:', error);
+                ctx.fillStyle = '#d00';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error creating chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+        }
+
+        let enfraAgingBarChartInstance = null;
+
+        function sortAgingCategories(agingArray) {
+            // Define the desired order for aging categories
+            const agingOrder = {
+                '1 - 05 Days': 1,
+                '1-05 Days': 1,
+                '1 -05 Days': 1,
+                '1- 05 Days': 1,
+                '6 - 15 Days': 2,
+                '6-15 Days': 2,
+                '6 -15 Days': 2,
+                '6- 15 Days': 2,
+                '16 - 30 Days': 3,
+                '16-30 Days': 3,
+                '16 -30 Days': 3,
+                '16- 30 Days': 3,
+                '31 - 100 Days': 4,
+                '31-100 Days': 4,
+                '31 -100 Days': 4,
+                '31- 100 Days': 4,
+                '> 100 Days': 5,
+                '>100 Days': 5,
+                '> 100Days': 5,
+                '>100Days': 5
+            };
+            
+            return agingArray.sort((a, b) => {
+                const orderA = agingOrder[a[0]] || 999;
+                const orderB = agingOrder[b[0]] || 999;
+                return orderA - orderB;
+            });
+        }
+
+        function createEnfraAgingBarChart() {
+            console.log('=== Creating Enfra Aging Bar Chart ===');
+            console.log('Current agingData:', agingData);
+            console.log('agingData.enfra:', agingData ? agingData.enfra : 'agingData is null/undefined');
+            
+            const canvas = document.getElementById('enfraAgingBarChart');
+            
+            if (!canvas) {
+                console.error('Enfra aging canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (enfraAgingBarChartInstance) {
+                enfraAgingBarChartInstance.destroy();
+            }
+            
+            try {
+                if (!agingData || !agingData.enfra || typeof agingData.enfra !== 'object') {
+                    console.error('No Enfra aging data available');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Enfra aging data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Get all aging categories and sort by custom order
+                let allAging = Object.entries(agingData.enfra)
+                    .filter(([aging, count]) => aging && count > 0);
+                
+                // Apply custom sorting
+                allAging = sortAgingCategories(allAging);
+                
+                console.log('Enfra aging categories found:', allAging.length);
+                
+                if (allAging.length === 0) {
+                    console.warn('No Enfra aging with data');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Enfra aging data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const agingLabels = allAging.map(item => item[0]);
+                const agingCounts = allAging.map(item => item[1]);
+                
+                console.log('Enfra aging categories:', agingLabels);
+                console.log('Enfra aging counts:', agingCounts);
+                
+                // Generate colorful colors for each bar
+                const colors = generateColorfulColors(agingLabels.length);
+                
+                const data = {
+                    labels: agingLabels,
+                    datasets: [{
+                        label: 'Enfra Count',
+                        data: agingCounts,
+                        backgroundColor: colors.backgroundColor,
+                        borderColor: colors.borderColor,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const aging = agingLabels[index];
+                                console.log('Enfra Aging chart clicked:', {
+                                    index: index,
+                                    aging: aging,
+                                    allLabels: agingLabels
+                                });
+                                openTableView('aging', aging, 'enfra');
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const percentage = analysisData.enfra > 0 
+                                            ? ((count / analysisData.enfra) * 100).toFixed(1)
+                                            : 0;
+                                        return `${context.label}: ${count} (${percentage}% of Enfra)`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    color: '#333'
+                                },
+                                title: {
+                                    display: false
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 25,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        },
+                        onClick: function(event, elements) {
+                            if (elements && elements.length > 0) {
+                                const elementIndex = elements[0].index;
+                                const reasonName = categoryLabels[elementIndex];
+                                console.log('Column K chart clicked:', reasonName);
+                                openTableView('reason', reasonName);
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#333';
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(data, bar.x, bar.y - 5);
+                                });
+                            });
+                        }
+                    }]
+                };
+                
+                enfraAgingBarChartInstance = new Chart(ctx, config);
+                console.log('Enfra Aging Chart created successfully with', allAging.length, 'categories');
+                
+            } catch (error) {
+                console.error('Error creating Enfra aging chart:', error);
+                ctx.fillStyle = '#d00';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error creating chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+        }
+
+        let smsLdAgingBarChartInstance = null;
+
+        function createSmsLdAgingBarChart() {
+            console.log('=== Creating SMS LD Aging Bar Chart ===');
+            console.log('Current agingData:', agingData);
+            console.log('agingData.smsLd:', agingData ? agingData.smsLd : 'agingData is null/undefined');
+            
+            const canvas = document.getElementById('smsLdAgingBarChart');
+            
+            if (!canvas) {
+                console.error('SMS LD aging canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (smsLdAgingBarChartInstance) {
+                smsLdAgingBarChartInstance.destroy();
+            }
+            
+            try {
+                if (!agingData || !agingData.smsLd || typeof agingData.smsLd !== 'object') {
+                    console.error('No SMS LD aging data available');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD aging data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Get all aging categories and sort by custom order
+                let allAging = Object.entries(agingData.smsLd)
+                    .filter(([aging, count]) => aging && count > 0);
+                
+                // Apply custom sorting
+                allAging = sortAgingCategories(allAging);
+                
+                console.log('SMS LD aging categories found:', allAging.length);
+                
+                if (allAging.length === 0) {
+                    console.warn('No SMS LD aging with data');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No SMS LD aging data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const agingLabels = allAging.map(item => item[0]);
+                const agingCounts = allAging.map(item => item[1]);
+                
+                console.log('SMS LD aging categories:', agingLabels);
+                console.log('SMS LD aging counts:', agingCounts);
+                
+                // Generate colorful colors for each bar
+                const colors = generateColorfulColors(agingLabels.length);
+                
+                const data = {
+                    labels: agingLabels,
+                    datasets: [{
+                        label: 'SMS LD Count',
+                        data: agingCounts,
+                        backgroundColor: colors.backgroundColor,
+                        borderColor: colors.borderColor,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const aging = agingLabels[index];
+                                openTableView('aging', aging, 'smsld');
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const percentage = analysisData.smsLd > 0 
+                                            ? ((count / analysisData.smsLd) * 100).toFixed(1)
+                                            : 0;
+                                        return `${context.label}: ${count} (${percentage}% of SMS LD)`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    color: '#333'
+                                },
+                                title: {
+                                    display: false
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 25,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#333';
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(data, bar.x, bar.y - 5);
+                                });
+                            });
+                        }
+                    }]
+                };
+                
+                smsLdAgingBarChartInstance = new Chart(ctx, config);
+                console.log('SMS LD Aging Chart created successfully with', allAging.length, 'categories');
+                
+            } catch (error) {
+                console.error('Error creating SMS LD aging chart:', error);
+                ctx.fillStyle = '#d00';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error creating chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+        }
+
+        let columnKBarChartInstance = null;
+
+        function createColumnKBarChart() {
+            console.log('=== Creating Column K Bar Chart ===');
+            console.log('Current columnKData:', columnKData);
+            
+            const canvas = document.getElementById('columnKBarChart');
+            
+            if (!canvas) {
+                console.error('Column K canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Clear any previous content
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (columnKBarChartInstance) {
+                columnKBarChartInstance.destroy();
+            }
+            
+            try {
+                if (!columnKData || typeof columnKData !== 'object') {
+                    console.error('No Column K data available');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Column K data found', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                // Get all categories and sort by count
+                const allCategories = Object.entries(columnKData)
+                    .filter(([category, count]) => category && count > 0)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                console.log('Column K categories found:', allCategories.length);
+                
+                if (allCategories.length === 0) {
+                    console.warn('No Column K categories with data');
+                    ctx.fillStyle = '#d00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No Column K data to display', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+                
+                const categoryLabels = allCategories.map(item => item[0]);
+                const categoryCounts = allCategories.map(item => item[1]);
+                
+                console.log('Column K categories:', categoryLabels);
+                console.log('Column K counts:', categoryCounts);
+                
+                // Generate colorful colors for each bar
+                const colors = generateColorfulColors(categoryLabels.length);
+                
+                const data = {
+                    labels: categoryLabels,
+                    datasets: [{
+                        label: 'Column K Count',
+                        data: categoryCounts,
+                        backgroundColor: colors.backgroundColor,
+                        borderColor: colors.borderColor,
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                };
+                
+                const config = {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const count = context.parsed.y;
+                                        const total = analysisData.total || 1;
+                                        const percentage = ((count / total) * 100).toFixed(1);
+                                        return `${context.label}: ${count} (${percentage}% of total)`;
+                                    }
+                                },
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    display: false,
+                                    stepSize: 1,
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                title: {
+                                    display: false
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    color: '#333'
+                                },
+                                title: {
+                                    display: false
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 25,
+                                bottom: 5,
+                                left: 5,
+                                right: 5
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutBounce'
+                        },
+                        onClick: function(event, elements) {
+                            if (elements && elements.length > 0) {
+                                const elementIndex = elements[0].index;
+                                // Use the labels from the chart data instead of undefined categoryLabels
+                                const reasonName = this.data.labels[elementIndex];
+                                console.log('Column K chart clicked:', {
+                                    index: elementIndex,
+                                    reasonName: reasonName,
+                                    allLabels: this.data.labels
+                                });
+                                openTableView('reason', reasonName);
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#333';
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(data, bar.x, bar.y - 5);
+                                });
+                            });
+                        }
+                    }]
+                };
+                
+                columnKBarChartInstance = new Chart(ctx, config);
+                console.log('Column K Chart created successfully with', allCategories.length, 'categories');
+                
+            } catch (error) {
+                console.error('Error creating Column K chart:', error);
+                ctx.fillStyle = '#d00';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error creating chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            }
+        }
+
+        // Initialize with existing DB.xlsx if available
+        window.addEventListener('load', function() {
+            console.log('=== Initializing dashboard ===');
+            
+            // Check if data exists in localStorage first
+            try {
+                const storedData = localStorage.getItem('rmsExcelData');
+                const dataLoaded = localStorage.getItem('rmsDataLoaded');
+                
+                if (storedData && dataLoaded === 'true') {
+                    try {
+                        console.log('Loading data from localStorage...');
+                        const jsonData = JSON.parse(storedData);
+                        
+                        if (jsonData && jsonData.length > 0) {
+                            showStatus('✅ Loading saved data...', 'success');
+                            console.log('Loaded data from localStorage, row count:', jsonData.length);
+                            
+                            analyzeColumnL(jsonData);
+                            analyzeRegionData(jsonData);
+                            analyzeAgingData(jsonData);
+                            analyzeColumnKData(jsonData);
+                            displayResults();
+                            
+                            return; // Exit if localStorage data loaded successfully
+                        }
+                    } catch (error) {
+                        console.warn('Error loading from localStorage:', error);
+                        try {
+                            localStorage.removeItem('rmsExcelData');
+                            localStorage.removeItem('rmsDataLoaded');
+                        } catch (removeError) {
+                            console.warn('Could not remove corrupted localStorage data:', removeError);
+                        }
+                    }
+                }
+            } catch (localStorageError) {
+                console.warn('localStorage is not available or accessible:', localStorageError);
+                showStatus('⚠️ localStorage not available. Data will not persist after page refresh.', 'loading');
+            }
+            
+            // If no localStorage data, try to automatically load DB.xlsx from multiple possible locations
+            console.log('Attempting to load DB.xlsx...');
+            
+            // Try multiple possible locations for DB.xlsx
+            const dbPaths = ['DB.xlsx', 'XLSX Files/DB.xlsx'];
+            let dbLoadAttempt = 0;
+            
+            function tryLoadDB(path) {
+                console.log(`Trying to load DB.xlsx from: ${path}`);
+                return fetch(path)
+                    .then(response => {
+                        console.log(`${path} fetch response status:`, response.status);
+                        if (!response.ok) {
+                            throw new Error(`${path} not found (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log(`${path} loaded successfully, processing data...`);
+                        showStatus(`🔄 Auto-loading ${path}...`, 'loading');
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log(`${path} data processed, row count:`, jsonData.length);
+                        if (jsonData.length > 0) {
+                            // Store in localStorage
+                            try {
+                                localStorage.setItem('rmsExcelData', JSON.stringify(jsonData));
+                                localStorage.setItem('rmsDataLoaded', 'true');
+                                console.log('Data saved to localStorage');
+                            } catch (storageError) {
+                                console.warn('Could not save to localStorage:', storageError);
+                            }
+                            
+                            analyzeColumnL(jsonData);
+                            analyzeRegionData(jsonData);
+                            analyzeAgingData(jsonData);
+                            analyzeColumnKData(jsonData);
+                            
+                            // Display results after both analyses complete
+                            displayResults();
+                            return true; // Success
+                        } else {
+                            console.log(`${path} is empty`);
+                            // Show the results section even if empty to ensure UI is visible
+                            document.getElementById('resultsSection').style.display = 'block';
+                            return false;
+                        }
+                    });
+            }
+            
+            // Try loading from each path
+            tryLoadDB(dbPaths[dbLoadAttempt])
+                .catch(error => {
+                    console.log(`${dbPaths[dbLoadAttempt]} not found or could not be loaded:`, error.message);
+                    dbLoadAttempt++;
+                    
+                    // Try next path if available
+                    if (dbLoadAttempt < dbPaths.length) {
+                        return tryLoadDB(dbPaths[dbLoadAttempt]);
+                    } else {
+                        throw error; // No more paths to try
+                    }
+                })
+                .catch(error => {
+                    console.log('All DB.xlsx paths failed:', error.message);
+                    showStatus('ℹ️ No data loaded. Please upload an Excel file.', 'loading');
+                    // Show the results section even if there's an error to ensure UI is visible
+                    document.getElementById('resultsSection').style.display = 'block';
+                });
+        });
+        
+        // Ensure results section is visible even if there are issues
+        window.addEventListener('DOMContentLoaded', function() {
+            // Small delay to ensure DOM is fully loaded
+            setTimeout(function() {
+                const resultsSection = document.getElementById('resultsSection');
+                if (resultsSection && resultsSection.style.display === 'none') {
+                    resultsSection.style.display = 'block';
+                }
+            }, 1000);
+        });
+
+        // Function to handle region-specific data navigation
+        function openRegionData(regionName) {
+            console.log(`Opening ${regionName} regional data...`);
+            
+            // Navigate to region-specific pages
+            const regionUrls = {
+                'Jacob Abad': 'jacob_abad_data.html',
+                'Larkana': 'larkana_data.html', 
+                'Sukkur': 'sukkur_data.html'
+            };
+            
+            const url = regionUrls[regionName];
+            if (url) {
+                // Navigate to the regional page
+                window.location.href = url;
+            } else {
+                alert(`Regional data for ${regionName} not configured yet.`);
+            }
+        }
+
+        // Function to open table view with filters
+        function openTableView(type, param1, param2) {
+            let url = 'table_view.html?';
+            
+            if (type === 'card') {
+                url += `type=card&domain=${encodeURIComponent(param1)}`;
+            } else if (type === 'region') {
+                url += `type=region&region=${encodeURIComponent(param1)}&domain=${encodeURIComponent(param2)}`;
+            } else if (type === 'aging') {
+                url += `type=aging&aging=${encodeURIComponent(param1)}&domain=${encodeURIComponent(param2)}`;
+            } else if (type === 'reason') {
+                url += `type=reason&reason=${encodeURIComponent(param1)}`;
+                console.log('Opening table view for reason:', param1);
+                console.log('Generated URL:', url);
+            }
+            
+            // Open in same window instead of new tab
+            window.location.href = url;
+        }
+
+        function displayResults() {
+            console.log('Displaying results...');
+            console.log('analysisData:', analysisData);
+            console.log('regionData:', regionData);
+            console.log('agingData:', agingData);
+            console.log('columnKData:', columnKData);
+            
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Calculate total RMS offline (Enfra + SMS LD)
+            const totalRmsOffline = (analysisData && analysisData.enfra || 0) + (analysisData && analysisData.smsLd || 0);
+            
+            // Pre-load the count for prolong offline sites
+            loadProlongOfflineCount();
+            
+            // Populate stats cards with click handlers
+            const statsGrid = document.getElementById('statsGrid');
+            if (statsGrid) {
+                statsGrid.innerHTML = `
+                    <div class="stat-card" onclick="openTableView('card', 'enfra')" style="cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.enfra || 0}</div>
+                        <div class="stat-label">Total Offline on<br>Enfra Domain</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'smsld')" style="cursor: pointer; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.smsLd || 0}</div>
+                        <div class="stat-label">Total Offline on<br>SMS LD Domain</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'all')" style="cursor: pointer; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${totalRmsOffline}</div>
+                        <div class="stat-label">Total RMS Offline</div>
+                    </div>
+                    <div class="stat-card" onclick="openTableView('card', 'total')" style="cursor: pointer; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);" title="Click to view detailed data">
+                        <div class="stat-number">${analysisData.total || 0}</div>
+                        <div class="stat-label">Total Sites</div>
+                    </div>
+                    <div class="stat-card" onclick="showTop10ProlongOffline()" style="cursor: pointer; background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);" title="Click to view prolong RMS offline sites">
+                        <div class="stat-number" id="top10Count">0</div>
+                        <div class="stat-label">Prolong RMS Offline<br>30+ Days</div>
+                    </div>
+                `;
+            }
+            
+            // Create 3D pie chart
+            create3DPieChart();
+            
+            // Create Enfra regional bar chart (all clusters)
+            createEnframiRegionalBarChart();
+            
+            // Create SMS LD regional bar chart (all clusters)
+            createSmsLdRegionalBarChart();
+            
+            // Create Enfra aging bar chart
+            createEnfraAgingBarChart();
+            
+            // Create SMS LD aging bar chart
+            createSmsLdAgingBarChart();
+            
+            // Create Column K bar chart
+            createColumnKBarChart();
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to load the count of prolong offline sites (30+ days)
+        function loadProlongOfflineCount() {
+            console.log('Loading prolong offline count...');
+            
+            // Try multiple paths for DB.xlsx file
+            const possiblePaths = [
+                './XLSX Files/DB.xlsx',
+                'XLSX Files/DB.xlsx',
+                '../XLSX Files/DB.xlsx',
+                'DB.xlsx',
+                './DB.xlsx'
+            ];
+            
+            // Function to try loading from a path
+            function tryLoadDB(pathIndex) {
+                if (pathIndex >= possiblePaths.length) {
+                    // Don't show alert here as it's just for pre-loading the count
+                    console.log('Could not load DB.xlsx for count - all paths exhausted');
+                    return;
+                }
+                
+                const path = possiblePaths[pathIndex];
+                console.log('Trying to load DB.xlsx from:', path);
+                
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`DB.xlsx not found at ${path} (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('DB.xlsx file loaded successfully for count from:', path);
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log('DB.xlsx data processed for count, row count:', jsonData.length);
+                        
+                        // Process data to find prolong offline sites (30+ days) based on column H (index 7)
+                        let prolongCount = 0;
+                        
+                        // Process rows (skip header)
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            
+                            if (!row || row.length < 8) continue;
+                            
+                            const siteId = row[0] || '';
+                            const agingData = row[7] || ''; // Column H (0-indexed, so index 7)
+                            
+                            // Skip rows with missing required data
+                            if (!siteId) continue;
+                            
+                            // Parse aging data (assuming it's a number)
+                            const agingValue = parseFloat(agingData);
+                            
+                            // Only count sites with 30+ days aging
+                            if (!isNaN(agingValue) && agingValue >= 30) {
+                                prolongCount++;
+                            }
+                        }
+                        
+                        console.log('Prolong offline sites (30+ days) count:', prolongCount);
+                        
+                        // Update the count in the card
+                        const top10CountElement = document.getElementById('top10Count');
+                        if (top10CountElement) {
+                            top10CountElement.textContent = prolongCount;
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error loading DB.xlsx for count from', path, ':', error.message);
+                        // Try next path
+                        tryLoadDB(pathIndex + 1);
+                    });
+            }
+            
+            // Start trying paths
+            tryLoadDB(0);
+        }
+        
+        // Alternative function to load the count (no longer needed with the improved version above)
+        function loadProlongOfflineCountAlt() {
+            // This function is now deprecated as the main function handles multiple paths
+            loadProlongOfflineCount();
+        }
+
+        function showTop10ProlongOffline() {
+            console.log('Showing prolong RMS offline sites (30+ days)');
+            
+            // Try multiple paths for DB.xlsx file
+            const possiblePaths = [
+                './XLSX Files/DB.xlsx',
+                'XLSX Files/DB.xlsx',
+                '../XLSX Files/DB.xlsx',
+                'DB.xlsx',
+                './DB.xlsx'
+            ];
+            
+            // Function to try loading from a path
+            function tryLoadDB(pathIndex) {
+                if (pathIndex >= possiblePaths.length) {
+                    alert('Error: Could not find DB.xlsx file in any expected location.\n\nPlease make sure the file exists in the XLSX Files folder.');
+                    return;
+                }
+                
+                const path = possiblePaths[pathIndex];
+                console.log('Trying to load DB.xlsx from:', path);
+                
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`DB.xlsx not found at ${path} (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('DB.xlsx file loaded successfully from:', path);
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log('DB.xlsx data processed, row count:', jsonData.length);
+                        
+                        // Process data to find prolong offline sites (30+ days) based on column H (index 7)
+                        const sitesWithAging = [];
+                        
+                        // Process rows (skip header)
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            
+                            if (!row || row.length < 8) continue;
+                            
+                            const siteId = row[0] || '';
+                            const agingData = row[7] || ''; // Column H (0-indexed, so index 7)
+                            
+                            // Skip rows with missing required data
+                            if (!siteId) continue;
+                            
+                            // Parse aging data (assuming it's a number)
+                            const agingValue = parseFloat(agingData);
+                            
+                            // Only include sites with 30+ days aging
+                            if (!isNaN(agingValue) && agingValue >= 30) {
+                                sitesWithAging.push({
+                                    siteId: siteId.trim(),
+                                    aging: agingValue
+                                });
+                            }
+                        }
+                        
+                        // Sort by aging value (descending) and take top 10
+                        sitesWithAging.sort((a, b) => b.aging - a.aging);
+                        const top10Sites = sitesWithAging.slice(0, 10);
+                        
+                        console.log('Top 10 prolong offline sites (30+ days):', top10Sites);
+                        
+                        // Update the count in the card
+                        const top10CountElement = document.getElementById('top10Count');
+                        if (top10CountElement) {
+                            top10CountElement.textContent = top10Sites.length;
+                        }
+                        
+                        // Show the data in a modal instead of alert for better user experience
+                        if (top10Sites.length > 0) {
+                            // Create a modal dialog for better display
+                            const modal = document.createElement('div');
+                            modal.style.cssText = `
+                                position: fixed;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                background: white;
+                                padding: 20px;
+                                border-radius: 10px;
+                                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                                z-index: 10000;
+                                max-width: 500px;
+                                max-height: 80vh;
+                                overflow-y: auto;
+                            `;
+                            
+                            modal.innerHTML = `
+                                <h3 style="margin-top: 0; color: #333;">Prolong RMS Offline Sites (30+ Days)</h3>
+                                <div style="text-align: left; max-height: 300px; overflow-y: auto;">
+                                    <ol style="padding-left: 20px;">
+                                        ${top10Sites.map((site, index) => 
+                                            `<li style="margin: 10px 0;"><strong>${site.siteId}</strong> - Aging: ${site.aging} days</li>`
+                                        ).join('')}
+                                    </ol>
+                                </div>
+                                <button onclick="this.parentElement.remove()" style="
+                                    background: #667eea;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 20px;
+                                    border-radius: 5px;
+                                    cursor: pointer;
+                                    margin-top: 15px;
+                                ">Close</button>
+                            `;
+                            
+                            document.body.appendChild(modal);
+                        } else {
+                            alert('No prolong offline sites (30+ days) found in the data.');
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error loading DB.xlsx from', path, ':', error.message);
+                        // Try next path
+                        tryLoadDB(pathIndex + 1);
+                    });
+            }
+            
+            // Start trying paths
+            tryLoadDB(0);
+        }
+
+        // Alternative function to show top 10 prolong offline sites (no longer needed with the improved version above)
+        function showTop10ProlongOfflineAlt() {
+            // This function is now deprecated as the main function handles multiple paths
+            showTop10ProlongOffline();
+        }
+                }
+                
+                const path = possiblePaths[pathIndex];
+                console.log('Trying to load DB.xlsx from:', path);
+                
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`DB.xlsx not found at ${path} (${response.status})`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('DB.xlsx file loaded successfully for count from:', path);
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        console.log('DB.xlsx data processed for count, row count:', jsonData.length);
+                        
+                        // Process data to find prolong offline sites (30+ days) based on column H (index 7)
+                        let prolongCount = 0;
+                        
+                        // Process rows (skip header)
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            
+                            if (!row || row.length < 8) continue;
+                            
+                            const siteId = row[0] || '';
+                            const agingData = row[7] || ''; // Column H (0-indexed, so index 7)
+                            
+                            // Skip rows with missing required data
+                            if (!siteId) continue;
+                            
+                            // Parse aging data (assuming it's a number)
+                            const agingValue = parseFloat(agingData);
+                            
+                            // Only count sites with 30+ days aging
+                            if (!isNaN(agingValue) && agingValue >= 30) {
+                                prolongCount++;
+                            }
+                        }
+                        
+                        console.log('Prolong offline sites (30+ days) count:', prolongCount);
+                        
+                        // Update the count in the card
+                        const top10CountElement = document.getElementById('top10Count');
+                        if (top10CountElement) {
+                            top10CountElement.textContent = prolongCount;
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error loading DB.xlsx for count from', path, ':', error.message);
+                        // Try next path
+                        tryLoadDB(pathIndex + 1);
+                    });
+            }
+            
+            // Start trying paths
+            tryLoadDB(0);
+        }
+        
+        // Alternative function to load the count (no longer needed with the improved version above)
+        function loadProlongOfflineCountAlt() {
+            // This function is now deprecated as the main function handles multiple paths
+            loadProlongOfflineCount();
+        }
+
+        // ==========================================
+        // EXPORT FUNCTIONS
+        // ==========================================
+
+        /**
+         * Export dashboard to PowerPoint with charts and data
+         */
+        async function exportToPPT() {
+            try {
+                showStatus('📥 Preparing PowerPoint export...', 'loading');
+
+                // Wait for library to load with retry logic
+                let retries = 0;
+                const maxRetries = 10;
+                while (retries < maxRetries) {
+                    if (typeof pptxgen !== 'undefined' || typeof PptxGenJS !== 'undefined') {
+                        break;
+                    }
+                    console.log(`Waiting for PptxGenJS library... attempt ${retries + 1}`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    retries++;
+                }
+
+                // Check if library is loaded after retries
+                if (typeof pptxgen === 'undefined' && typeof PptxGenJS === 'undefined') {
+                    throw new Error('PowerPoint library not loaded. Please check your internet connection and refresh the page.\n\nIf the problem persists, try:\n1. Clear browser cache (Ctrl+Shift+Delete)\n2. Disable ad blockers\n3. Use a different browser');
+                }
+
+                showStatus('📥 Generating PowerPoint presentation...', 'loading');
+
+                // Create new presentation - try both ways to access the library
+                const PptxGen = typeof pptxgen !== 'undefined' ? pptxgen : PptxGenJS;
+                console.log('PptxGenJS loaded successfully:', PptxGen);
+                
+                const pptx = new PptxGen();
+                
+                pptx.layout = 'LAYOUT_WIDE';
+                pptx.author = 'RMS Dashboard';
+                pptx.company = 'SMS LD';
+                pptx.title = 'RMS Offline Summary Report';
+
+                // Slide 1: Title Slide
+                const slide1 = pptx.addSlide();
+                slide1.background = { color: '667eea' };
+                slide1.addText('RMS OFFLINE SUMMARY', {
+                    x: 0.5, y: 2.5, w: 9, h: 1,
+                    fontSize: 44, bold: true, color: 'FFFFFF',
+                    align: 'center'
+                });
+                slide1.addText('Remote Monitoring System - Data Analysis Dashboard', {
+                    x: 0.5, y: 3.5, w: 9, h: 0.5,
+                    fontSize: 20, color: 'FFFFFF', align: 'center'
+                });
+                const today = new Date();
+                slide1.addText(`Generated: ${today.toLocaleDateString()} ${today.toLocaleTimeString()}`, {
+                    x: 0.5, y: 4.5, w: 9, h: 0.4,
+                    fontSize: 14, color: 'FFFFFF', align: 'center'
+                });
+
+                // Slide 2: Statistics Summary
+                const slide2 = pptx.addSlide();
+                slide2.addText('Statistics Summary', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.5,
+                    fontSize: 32, bold: true, color: '667eea'
+                });
+
+                const statsData = [
+                    [{ text: 'Metric', options: { bold: true, color: '667eea' } }, { text: 'Count', options: { bold: true, color: '667eea' } }],
+                    ['Total Offline on Enfra Domain', String(analysisData.enfra || 0)],
+                    ['Total Offline on SMS LD Domain', String(analysisData.smsLd || 0)],
+                    ['Total RMS Offline', String((analysisData.enfra || 0) + (analysisData.smsLd || 0))],
+                    ['Total Records', String(analysisData.total || 0)]
+                ];
+
+                slide2.addTable(statsData, {
+                    x: 1.5, y: 1.5, w: 7,
+                    fontSize: 18,
+                    color: '333333',
+                    fill: { color: 'F5F5F5' },
+                    border: { pt: 1, color: '667eea' },
+                    align: 'center'
+                });
+
+                // Slide 3: Charts - Convert charts to images
+                const slide3 = pptx.addSlide();
+                slide3.addText('Visualization Charts', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.5,
+                    fontSize: 32, bold: true, color: '667eea'
+                });
+
+                // Get chart images
+                const pieChartCanvas = document.getElementById('pieChart');
+                const enfraBarCanvas = document.getElementById('enframiRegionBarChart');
+                const smsLdBarCanvas = document.getElementById('smsLdRegionBarChart');
+
+                if (pieChartCanvas) {
+                    const pieChartImg = pieChartCanvas.toDataURL('image/png');
+                    slide3.addImage({ data: pieChartImg, x: 0.5, y: 1.2, w: 3, h: 3 });
+                }
+                if (enfraBarCanvas) {
+                    const enfraBarImg = enfraBarCanvas.toDataURL('image/png');
+                    slide3.addImage({ data: enfraBarImg, x: 3.7, y: 1.2, w: 3, h: 3 });
+                }
+                if (smsLdBarCanvas) {
+                    const smsLdBarImg = smsLdBarCanvas.toDataURL('image/png');
+                    slide3.addImage({ data: smsLdBarImg, x: 6.9, y: 1.2, w: 3, h: 3 });
+                }
+
+                // Slide 4: Aging Charts
+                const slide4 = pptx.addSlide();
+                slide4.addText('Aging Analysis', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.5,
+                    fontSize: 32, bold: true, color: '667eea'
+                });
+
+                const enfraAgingCanvas = document.getElementById('enfraAgingBarChart');
+                const smsLdAgingCanvas = document.getElementById('smsLdAgingBarChart');
+                const reasonsCanvas = document.getElementById('columnKBarChart');
+
+                if (enfraAgingCanvas) {
+                    const enfraAgingImg = enfraAgingCanvas.toDataURL('image/png');
+                    slide4.addImage({ data: enfraAgingImg, x: 0.5, y: 1.2, w: 3, h: 3 });
+                }
+                if (smsLdAgingCanvas) {
+                    const smsLdAgingImg = smsLdAgingCanvas.toDataURL('image/png');
+                    slide4.addImage({ data: smsLdAgingImg, x: 3.7, y: 1.2, w: 3, h: 3 });
+                }
+                if (reasonsCanvas) {
+                    const reasonsImg = reasonsCanvas.toDataURL('image/png');
+                    slide4.addImage({ data: reasonsImg, x: 6.9, y: 1.2, w: 3, h: 3 });
+                }
+
+                // Save presentation
+                console.log('Saving PowerPoint presentation...');
+                showStatus('💾 Saving PowerPoint file...', 'loading');
+                await pptx.writeFile({ fileName: 'RMS_Dashboard_Report.pptx' });
+                showStatus('✅ PowerPoint exported successfully!', 'success');
+                alert('✅ PowerPoint exported successfully!\n\nFile saved as: RMS_Dashboard_Report.pptx\nCheck your Downloads folder.');
+
+            } catch (error) {
+                console.error('PPT Export Error:', error);
+                alert('❌ Error exporting PowerPoint:\n\n' + error.message + '\n\nPlease check browser console (F12) for details.');
+                showStatus('❌ Error exporting PowerPoint: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * Export all data to Excel spreadsheet
+         */
+        function exportToExcel() {
+            try {
+                showStatus('📥 Generating Excel file...', 'loading');
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Statistics Summary
+                const statsData = [
+                    ['RMS OFFLINE SUMMARY REPORT'],
+                    ['Generated:', new Date().toLocaleString()],
+                    [],
+                    ['Metric', 'Count'],
+                    ['Total Offline on Enfra Domain', analysisData.enfra || 0],
+                    ['Total Offline on SMS LD Domain', analysisData.smsLd || 0],
+                    ['Total RMS Offline', (analysisData.enfra || 0) + (analysisData.smsLd || 0)],
+                    ['Total Records', analysisData.total || 0],
+                    ['Empty Entries', analysisData.empty || 0]
+                ];
+                const ws1 = XLSX.utils.aoa_to_sheet(statsData);
+                XLSX.utils.book_append_sheet(wb, ws1, 'Statistics');
+
+                // Sheet 2: Regional Data (Enfra)
+                if (regionData && regionData.enfra) {
+                    const enfraRegionData = [['Region', 'Count']];
+                    Object.entries(regionData.enfra).forEach(([region, count]) => {
+                        enfraRegionData.push([region, count]);
+                    });
+                    const ws2 = XLSX.utils.aoa_to_sheet(enfraRegionData);
+                    XLSX.utils.book_append_sheet(wb, ws2, 'Enfra Regions');
+                }
+
+                // Sheet 3: Regional Data (SMS LD)
+                if (regionData && regionData.smsLd) {
+                    const smsLdRegionData = [['Region', 'Count']];
+                    Object.entries(regionData.smsLd).forEach(([region, count]) => {
+                        smsLdRegionData.push([region, count]);
+                    });
+                    const ws3 = XLSX.utils.aoa_to_sheet(smsLdRegionData);
+                    XLSX.utils.book_append_sheet(wb, ws3, 'SMS LD Regions');
+                }
+
+                // Sheet 4: Aging Data (Enfra)
+                if (agingData && agingData.enfra) {
+                    const enfraAgingData = [['Aging', 'Count']];
+                    Object.entries(agingData.enfra).forEach(([aging, count]) => {
+                        enfraAgingData.push([aging, count]);
+                    });
+                    const ws4 = XLSX.utils.aoa_to_sheet(enfraAgingData);
+                    XLSX.utils.book_append_sheet(wb, ws4, 'Enfra Aging');
+                }
+
+                // Sheet 5: Aging Data (SMS LD)
+                if (agingData && agingData.smsLd) {
+                    const smsLdAgingData = [['Aging', 'Count']];
+                    Object.entries(agingData.smsLd).forEach(([aging, count]) => {
+                        smsLdAgingData.push([aging, count]);
+                    });
+                    const ws5 = XLSX.utils.aoa_to_sheet(smsLdAgingData);
+                    XLSX.utils.book_append_sheet(wb, ws5, 'SMS LD Aging');
+                }
+
+                // Sheet 6: Reasons Data
+                if (columnKData) {
+                    const reasonsData = [['Reason', 'Count']];
+                    Object.entries(columnKData).forEach(([reason, count]) => {
+                        reasonsData.push([reason, count]);
+                    });
+                    const ws6 = XLSX.utils.aoa_to_sheet(reasonsData);
+                    XLSX.utils.book_append_sheet(wb, ws6, 'Offline Reasons');
+                }
+
+                // Sheet 7: Raw Data (if available)
+                if (rawData && rawData.length > 0) {
+                    const ws7 = XLSX.utils.aoa_to_sheet(rawData);
+                    XLSX.utils.book_append_sheet(wb, ws7, 'Raw Data');
+                }
+
+                // Save file
+                XLSX.writeFile(wb, 'RMS_Dashboard_Report.xlsx');
+                showStatus('✅ Excel exported successfully!', 'success');
+
+            } catch (error) {
+                console.error('Excel Export Error:', error);
+                showStatus('❌ Error exporting Excel: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * Export dashboard to PDF document
+         */
+        async function exportToPDF() {
+            try {
+                showStatus('📥 Generating PDF document...', 'loading');
+
+                // Use jsPDF from CDN
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape', 'mm', 'a4');
+                
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 20;
+
+                // Page 1: Title Page
+                doc.setFillColor(102, 126, 234);
+                doc.rect(0, 0, pageWidth, pageHeight, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(32);
+                doc.text('RMS OFFLINE SUMMARY', pageWidth / 2, 80, { align: 'center' });
+                doc.setFontSize(16);
+                doc.text('Remote Monitoring System - Data Analysis Dashboard', pageWidth / 2, 100, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 120, { align: 'center' });
+
+                // Page 2: Statistics
+                doc.addPage();
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(24);
+                doc.text('Statistics Summary', margin, 30);
+                
+                doc.setFontSize(14);
+                let yPos = 50;
+                doc.text(`Total Offline on Enfra Domain: ${analysisData.enfra || 0}`, margin, yPos);
+                yPos += 15;
+                doc.text(`Total Offline on SMS LD Domain: ${analysisData.smsLd || 0}`, margin, yPos);
+                yPos += 15;
+                doc.text(`Total RMS Offline: ${(analysisData.enfra || 0) + (analysisData.smsLd || 0)}`, margin, yPos);
+                yPos += 15;
+                doc.text(`Total Records: ${analysisData.total || 0}`, margin, yPos);
+
+                // Page 3: Charts
+                doc.addPage();
+                doc.setFontSize(24);
+                doc.text('Dashboard Charts', margin, 30);
+
+                // Capture charts as images using html2canvas
+                const chartsContainer = document.querySelector('.results-section');
+                if (chartsContainer) {
+                    const canvas = await html2canvas(chartsContainer, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = pageWidth - (2 * margin);
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    if (imgHeight < pageHeight - 50) {
+                        doc.addImage(imgData, 'PNG', margin, 40, imgWidth, imgHeight);
+                    } else {
+                        // Split into multiple pages if needed
+                        const ratio = imgHeight / imgWidth;
+                        const scaledHeight = pageHeight - 60;
+                        const scaledWidth = scaledHeight / ratio;
+                        doc.addImage(imgData, 'PNG', margin, 40, scaledWidth, scaledHeight);
+                    }
+                }
+
+                // Save PDF
+                doc.save('RMS_Dashboard_Report.pdf');
+                showStatus('✅ PDF exported successfully!', 'success');
+
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                showStatus('❌ Error exporting PDF: ' + error.message, 'error');
+            }
+        }
+
+        // Helper function to check if libraries are loaded
+        function checkExportLibraries() {
+            console.log('=== Export Libraries Check ===');
+            console.log('PptxGenJS (window.pptxgen):', typeof pptxgen !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('PptxGenJS (window.PptxGenJS):', typeof PptxGenJS !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('jsPDF (window.jspdf):', typeof window.jspdf !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('html2canvas:', typeof html2canvas !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('XLSX:', typeof XLSX !== 'undefined' ? '✅ Loaded' : '❌ Not loaded');
+            console.log('================================');
+            
+            // Return status
+            return {
+                pptx: typeof pptxgen !== 'undefined' || typeof PptxGenJS !== 'undefined',
+                pdf: typeof window.jspdf !== 'undefined' && typeof html2canvas !== 'undefined',
+                excel: typeof XLSX !== 'undefined'
+            };
+        }
+
+        // Check libraries on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const status = checkExportLibraries();
+                if (!status.pptx) {
+                    console.warn('⚠️ PowerPoint library not loaded. PPT export may not work.');
+                }
+                if (!status.pdf) {
+                    console.warn('⚠️ PDF libraries not loaded. PDF export may not work.');
+                }
+                if (!status.excel) {
+                    console.warn('⚠️ Excel library not loaded. Excel export may not work.');
+                }
+            }, 2000);
+        });
+
+        // Add visit counter functionality
+        function updateVisitCounter() {
+            // Get current visit count from localStorage
+            let visitCount = localStorage.getItem('visitCount') || 0;
+            visitCount = parseInt(visitCount) + 1;
+            
+            // Detect if visit is from mobile or web and get mobile model if applicable
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const mobileModel = isMobile ? navigator.userAgent.match(/Android|iPhone|iPad|iPod|BlackBerry/) : null;
+            
+            // Save updated count
+            localStorage.setItem('visitCount', visitCount);
+            
+            // Record visit with timestamp and device info
+            let visitHistory = JSON.parse(localStorage.getItem('visitHistory') || '[]');
+            visitHistory.push({
+                timestamp: new Date().toISOString(),
+                count: visitCount,
+                deviceType: isMobile ? 'Mobile' : 'Web',
+                mobileModel: mobileModel ? mobileModel[0] : null
+            });
+            
+            // Keep only last 50 visits
+            if (visitHistory.length > 50) {
+                visitHistory = visitHistory.slice(-50);
+            }
+            
+            localStorage.setItem('visitHistory', JSON.stringify(visitHistory));
+        }
+        
+        // Function to open visit history
+        function openVisitHistory() {
+            // Password protection
+            const password = prompt("Please enter password to view visit history:");
+            if (password !== "Abbas@2012") {
+                alert("Incorrect password!");
+                return;
+            }
+            
+            // Create a detailed visit history display
+            let visitHistory = JSON.parse(localStorage.getItem('visitHistory') || '[]');
+            if (visitHistory.length === 0) {
+                alert('No visit history available.');
+                return;
+            }
+            
+            // Sort by timestamp descending (newest first)
+            visitHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            let historyText = 'Visit History:\n\n';
+            visitHistory.forEach(visit => {
+                const date = new Date(visit.timestamp);
+                const deviceInfo = visit.deviceType === 'Mobile' ? 
+                    `${visit.deviceType} (${visit.mobileModel || 'Unknown Model'})` : 
+                    visit.deviceType;
+                historyText += `Visit #${visit.count}: ${date.toLocaleString()} - ${deviceInfo}\n`;
+            });
+            
+            alert(historyText);
+        }
+        
+        // Initialize visit counter on page load
+        window.addEventListener('load', function() {
+            updateVisitCounter();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+===================================================
+RMS DASHBOARD - REGION BUTTONS UPDATE SUMMARY
+===================================================
+Date: 2025-10-12
+File Updated: column_l_3d_chart.html
+
+CHANGES MADE:
+===================================================
+
+1. HEADING RENAMED:
+   ----------------
+   Old: "Column K Categories Distribution"
+   New: "RMS Offline Reasons"
+   
+   This heading is displayed above the Column K bar chart in the bottom-right 
+   section of the dashboard.
+
+2. BUTTON TEXT UPDATED:
+   --------------------
+   Button 1: Now displays "Jacobabad" (previously "1")
+   Button 2: Now displays "Larkana" (previously "2")
+   Button 3: Now displays "Sukkur" (previously "3")
+   
+   These buttons are located on the left side of the dashboard.
+
+3. BUTTON STYLING ADJUSTED:
+   ------------------------
+   - Width increased from 60px to 80px to accommodate longer text
+   - Font size reduced from 24px to 12px for better text fit
+   - Added text-align: center and padding: 5px
+   - Maintained all existing colors and gradients
+
+4. BUTTON FUNCTIONALITY ADDED:
+   ---------------------------
+   Each of the three region buttons now has a click handler that:
+   
+   a) Opens a new window/tab to region-specific data pages:
+      - Jacobabad button -> jacobabad_data.html
+      - Larkana button -> larkana_data.html
+      - Sukkur button -> sukkur_data.html
+   
+   b) Shows an alert notification when clicked (until regional pages are created)
+   
+   c) Function signature: openRegionData(regionName)
+
+5. JAVASCRIPT FUNCTION ADDED:
+   ---------------------------
+   Function Name: openRegionData(regionName)
+   
+   Features:
+   - Accepts region name as parameter
+   - Maps region to corresponding HTML file
+   - Opens link in new tab using window.open(url, '_blank')
+   - Provides user feedback via alert dialog
+   - Includes commented alternatives for different navigation methods
+   
+   Code Location: Bottom of the <script> section before closing </script> tag
+
+===================================================
+NEXT STEPS (For You to Complete):
+===================================================
+
+To make the regional data links fully functional, you need to create three 
+HTML files in the same RMS directory:
+
+1. jacobabad_data.html - Contains Jacobabad regional data
+2. larkana_data.html - Contains Larkana regional data  
+3. sukkur_data.html - Contains Sukkur regional data
+
+Each file should:
+- Load the DB.xlsx file
+- Filter data by the respective region (Column D)
+- Display region-specific charts and statistics
+- Match the design style of the main dashboard
+
+You can use column_l_3d_chart.html as a template and modify the data 
+filtering logic to show only the selected region's data.
+
+===================================================
+ALTERNATIVE IMPLEMENTATION OPTIONS:
+===================================================
+
+Instead of creating separate HTML files, you could also:
+
+Option 1: Use URL Parameters
+   - Modify: window.location.href = `column_l_3d_chart.html?region=${regionName}`
+   - Parse URL parameter on page load
+   - Filter data based on region parameter
+
+Option 2: Modal/Overlay Approach
+   - Show regional data in a popup overlay on the same page
+   - No need for separate files
+   - Better user experience (no page reload)
+
+Option 3: Single Page with Tabs
+   - Create tabs for each region
+   - Load all regions on same page
+   - Switch between views using JavaScript
+
+===================================================
+TESTING THE CHANGES:
+===================================================
+
+To test the updated dashboard:
+
+1. Open column_l_3d_chart.html in your web browser
+2. Upload the DB.xlsx file (or it will auto-load if in same directory)
+3. Check the bottom-right chart - heading should read "RMS Offline Reasons"
+4. Look at the left sidebar - first 3 buttons should show city names
+5. Click on "Jacobabad", "Larkana", or "Sukkur" buttons
+6. An alert should appear indicating the regional data page to be opened
+
+===================================================
+FILE BACKUP RECOMMENDATION:
+===================================================
+
+Before testing, it's recommended to create a backup of your working 
+column_l_3d_chart.html file in case you need to revert changes.
+
+===================================================

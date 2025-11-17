@@ -1,0 +1,54 @@
+# Entries Display Fix Summary
+
+## Issues Identified
+1. Entries were not visible in the table view when clicking on dashboard cards
+2. Column mapping in table_view.html was incorrect, causing data to not display properly
+3. Potential CSS overflow issues that could hide content
+
+## Fixes Implemented
+
+### 1. Corrected Column Mapping in table_view.html
+- Updated column indices to match the actual structure of the Excel file:
+  * Site Id: Column A (index 0)
+  * Sub Region: Column B (index 1)
+  * Cluster: Column C (index 2)
+  * Team Lead: Column D (index 3)
+  * ES POC: Column E (index 4)
+  * Offline Date: Column F (index 5)
+  * Days Passed (Aging): Column G (index 6)
+  * Reason: Column H (index 7)
+  * Domain: Column L (index 11)
+
+### 2. Enhanced Data Filtering Logic
+- Improved the shouldIncludeRecord function to properly handle:
+  * Region filtering with support for "Jacob Abad"/"Jacobabad" variations
+  * Domain filtering for both "Enfra" and "SMS LD" domains
+  * Aging filtering with proper range matching
+  * Reason filtering with case-insensitive matching
+
+### 3. Fixed CSS Overflow Issues
+- Updated CSS in table_view.html to ensure content visibility:
+  * Changed body overflow to "auto"
+  * Changed container overflow to "visible"
+  * Changed table-container overflow to "visible"
+  * Changed table-scroll overflow to "auto"
+
+### 4. Created Test File
+- Created test_entries_fix.html to verify the fixes work correctly
+
+## Files Modified
+1. table_view.html - Updated column mapping and CSS
+2. test_entries_fix.html - Created for testing the fixes
+
+## Verification Steps
+1. Open the dashboard (index.html)
+2. Load or upload DB.xlsx data
+3. Click on any card or filter to open the table view
+4. Verify that entries are now visible in the table
+5. Check that the correct columns are displayed (Site Id, Sub Region, Cluster, Team Lead, ES POC, etc.)
+
+## Expected Results
+- Entries should now be visible when clicking on dashboard cards
+- Data should display in the correct columns
+- Table should be scrollable and not clipped
+- Filtering should work correctly for all criteria

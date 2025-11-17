@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprehensive SPD Debug</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: white; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        button { padding: 10px 15px; margin: 5px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>Comprehensive SPD Data Debug</h1>
+    <button onclick="testDirectLoad()">Test Direct Load from SPD.xlsx</button>
+    <button onclick="testLocalStorageLoad()">Test LocalStorage Load</button>
+    <button onclick="simulateDashboardTransfer()">Simulate Dashboard Transfer</button>
+    <button onclick="clearDebug()">Clear Debug Info</button>
+    
+    <div id="debugOutput"></div>
+
+    <script>
+        function addDebug(message, type = 'info') {
+            const debugOutput = document.getElementById('debugOutput');
+            const div = document.createElement('div');
+            div.className = 'section ' + type;
+            div.innerHTML = message;
+            debugOutput.appendChild(div);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+        
+        function clearDebug() {
+            document.getElementById('debugOutput').innerHTML = '';
+        }
+        
+        // Simulate the filterData function from spd_data_details.html
+        function filterData(data, filterType) {
+            console.log('Filtering data with filterType:', filterType);
+            console.log('Total data rows:', data.length);
+            
+            const startIndex = data.length > 0 && typeof data[0][0] === 'string' && data[0][0].toLowerCase().includes('site') ? 1 : 0;
+            let filteredData = [];
+            
+            console.log('Start index:', startIndex);
+            
+            // Count different types for debugging
+            let spdCount = 0;
+            let enfraCount = 0;
+            let smsldCount = 0;
+            let resolvedCount = 0;
+            let otherCount = 0;
+            
+            for (let i = startIndex; i < data.length; i++) {
+                const row = data[i];
+                const columnG = row[6] || ''; // Column G (7th column)
+                const columnL = row[11] || ''; // Column L (12th column)
+                
+                // Count different types
+                if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                    spdCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'ENFRA') {
+                    enfraCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'SMS LD') {
+                    smsldCount++;
+                }
+                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'RESOLVED') {
+                    resolvedCount++;
+                }
+                const trimmedColumnL = typeof columnL === 'string' ? columnL.trim().toUpperCase() : '';
+                if (trimmedColumnL && trimmedColumnL !== '' && 
+                    trimmedColumnL !== 'SPD' && 
+                    trimmedColumnL !== 'ENFRA' && 
+                    trimmedColumnL !== 'SMS LD' && 
+                    trimmedColumnL !== 'RESOLVED') {
+                    otherCount++;
+                }
+                
+                switch(filterType) {
+                    case 'spd':
+                        if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                            filteredData.push(row);
+                        }
+                        break;
+                    case 'enfra':
+                        if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'ENFRA') {
+                            filteredData.push(row);
+                        }
+                        break;
+                    case 'smsld':
+                        if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'SMS LD') {
+                            filteredData.push(row);
+                        }
+                        break;
+                    case 'resolved':
+                        if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'RESOLVED') {
+                            filteredData.push(row);
+                        }
+                        break;
+                    case 'others':
+                        // Show all non-empty values in Column L that are not the specific types
+                        const trimmedColumnL = typeof columnL === 'string' ? columnL.trim().toUpperCase() : '';
+                        if (trimmedColumnL && trimmedColumnL !== '' && 
+                            trimmedColumnL !== 'SPD' && 
+                            trimmedColumnL !== 'ENFRA' && 
+                            trimmedColumnL !== 'SMS LD' && 
+                            trimmedColumnL !== 'RESOLVED') {
+                            filteredData.push(row);
+                        }
+                        break;
+                    default:
+                        // For 'all' or other filters, exclude Enfra alarms
+                        if (!(typeof columnL === 'string' && columnL.trim().toUpperCase() === 'ENFRA')) {
+                            filteredData.push(row);
+                        }
+                }
+            }
+            
+            console.log('Counts - SPD:', spdCount, ', Enfra:', enfraCount, ', SMS LD:', smsldCount, ', Resolved:', resolvedCount, ', Others:', otherCount);
+            console.log('Filtered data count:', filteredData.length);
+            return { filteredData, counts: { spd: spdCount, enfra: enfraCount, smsld: smsldCount, resolved: resolvedCount, others: otherCount } };
+        }
+        
+        function testDirectLoad() {
+            addDebug('<h2>Testing Direct Load from SPD.xlsx</h2>');
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('<strong>File loaded successfully</strong>');
+                    addDebug('Total rows: ' + jsonData.length);
+                    
+                    // Detect header row
+                    let startIndex = 0;
+                    if (jsonData.length > 0) {
+                        const firstRow = jsonData[0];
+                        const firstCell = firstRow[0] || '';
+                        if (typeof firstCell === 'string' && firstCell.toLowerCase().includes('site')) {
+                            startIndex = 1;
+                            addDebug('Header row detected at index 0');
+                        } else {
+                            addDebug('No header row detected');
+                        }
+                    }
+                    
+                    addDebug('Start index for data: ' + startIndex);
+                    
+                    // Show first 5 rows with all columns
+                    addDebug('<h3>First 5 rows:</h3><pre>' + JSON.stringify(jsonData.slice(0, 5), null, 2) + '</pre>');
+                    
+                    // Test filtering for SPD
+                    const result = filterData(jsonData, 'spd');
+                    addDebug(`<h3>SPD Filter Results:</h3>
+                        <ul>
+                            <li>Total SPD alarms found: ${result.filteredData.length}</li>
+                            <li>Expected count from Column G: ${result.counts.spd}</li>
+                        </ul>`);
+                    
+                    if (result.filteredData.length > 0) {
+                        addDebug('<h3>First 3 SPD rows:</h3><pre>' + JSON.stringify(result.filteredData.slice(0, 3), null, 2) + '</pre>');
+                    }
+                })
+                .catch(error => {
+                    addDebug('Error loading SPD.xlsx: ' + error.message, 'error');
+                });
+        }
+        
+        function testLocalStorageLoad() {
+            addDebug('<h2>Testing LocalStorage Load</h2>');
+            
+            try {
+                const storedData = localStorage.getItem('spdData');
+                if (storedData) {
+                    const data = JSON.parse(storedData);
+                    addDebug('Data loaded from localStorage, rows: ' + data.length);
+                    
+                    // Test filtering for SPD
+                    const result = filterData(data, 'spd');
+                    addDebug(`<h3>SPD Filter Results:</h3>
+                        <ul>
+                            <li>Total SPD alarms found: ${result.filteredData.length}</li>
+                            <li>Expected count from Column G: ${result.counts.spd}</li>
+                        </ul>`);
+                    
+                    if (result.filteredData.length > 0) {
+                        addDebug('<h3>First 3 SPD rows:</h3><pre>' + JSON.stringify(result.filteredData.slice(0, 3), null, 2) + '</pre>');
+                    }
+                } else {
+                    addDebug('No data found in localStorage', 'warning');
+                }
+            } catch (e) {
+                addDebug('Error parsing stored data from localStorage: ' + e.message, 'error');
+            }
+        }
+        
+        function simulateDashboardTransfer() {
+            addDebug('<h2>Simulating Dashboard Data Transfer</h2>');
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('Data loaded from SPD.xlsx, rows: ' + jsonData.length);
+                    
+                    // Simulate storing in localStorage like the dashboard does
+                    try {
+                        const dataString = JSON.stringify(jsonData);
+                        localStorage.setItem('spdData', dataString);
+                        addDebug('Data stored in localStorage successfully');
+                        
+                        // Now simulate what happens in the details page
+                        const storedData = localStorage.getItem('spdData');
+                        if (storedData) {
+                            const parsedData = JSON.parse(storedData);
+                            addDebug('Data retrieved from localStorage, rows: ' + parsedData.length);
+                            
+                            // Test filtering for SPD
+                            const result = filterData(parsedData, 'spd');
+                            addDebug(`<h3>SPD Filter Results:</h3>
+                                <ul>
+                                    <li>Total SPD alarms found: ${result.filteredData.length}</li>
+                                    <li>Expected count from Column G: ${result.counts.spd}</li>
+                                </ul>`);
+                            
+                            if (result.filteredData.length > 0) {
+                                addDebug('<h3>First 3 SPD rows:</h3><pre>' + JSON.stringify(result.filteredData.slice(0, 3), null, 2) + '</pre>');
+                            }
+                        }
+                    } catch (e) {
+                        addDebug('Error with localStorage simulation: ' + e.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    addDebug('Error loading SPD.xlsx: ' + error.message, 'error');
+                });
+        }
+    </script>
+</body>
+</html>

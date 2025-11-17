@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Region Wise Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            align-items: end;
+        }
+        
+        .control-group {
+            flex: 1;
+        }
+        
+        .control-group h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        select, input, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .content {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .map-container {
+            flex: 3;
+            height: 700px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sidebar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            padding: 25px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .upload-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .upload-section h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-button:hover {
+            background: #2980b9;
+        }
+        
+        .site-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .site-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .site-item:hover {
+            background: #e3f2fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .site-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .site-item p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin: 3px 0;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item .number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .stat-item .label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .region-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .region-btn {
+            flex: 1;
+            padding: 15px;
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .region-btn:hover {
+            background: #d5dbdb;
+            transform: translateY(-3px);
+        }
+        
+        .region-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .map-container {
+                height: 500px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-globe-asia"></i> Region Wise Map</h1>
+            <p>Display all sites for a selected region on interactive map</p>
+        </div>
+        
+        <div id="statusMessage" class="status loading">
+            🔄 Initializing map and waiting for Excel file upload...
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3><i class="fas fa-cloud-upload-alt"></i> Upload Excel File</h3>
+                <div class="file-input-wrapper">
+                    <div class="file-input-button">
+                        <i class="fas fa-file-excel"></i> Choose Locations.xlsx File
+                    </div>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls">
+                </div>
+                <p id="fileName" style="margin-top: 5px; font-size: 0.9rem; color: #7f8c8d;">No file selected</p>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-map-marked-alt"></i> Select Region</h3>
+                <div class="region-selector">
+                    <div class="region-btn" data-region="Sukkur">Sukkur</div>
+                    <div class="region-btn" data-region="Jacob Abad">Jacob Abad</div>
+                    <div class="region-btn" data-region="Larkana">Larkana</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3><i class="fas fa-cogs"></i> Actions</h3>
+                <button id="showAllBtn" class="btn-success" disabled>
+                    <i class="fas fa-eye"></i> Show Selected Region
+                </button>
+                <button id="resetBtn" class="btn-secondary">
+                    <i class="fas fa-redo"></i> Reset Map
+                </button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <div class="sidebar">
+                <h2><i class="fas fa-info-circle"></i> Region Information</h2>
+                <div id="regionInfo">
+                    <p style="text-align: center; color: #7f8c8d; margin: 20px 0;">
+                        Please upload an Excel file and select a region to view site information.
+                    </p>
+                </div>
+                
+                <h2><i class="fas fa-list"></i> Sites in Selected Region</h2>
+                <div class="site-list" id="siteList">
+                    <!-- Sites will be populated here -->
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="number" id="totalSites">0</div>
+                        <div class="label">Total Sites</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="number" id="subRegions">0</div>
+                        <div class="label">Sub Regions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Region Wise Map Visualization &copy; 2025 Abbas Enterprises</p>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- SheetJS for Excel processing -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Leaflet for mapping -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global variables
+        let map;
+        let markers = [];
+        let sitesData = [];
+        let selectedRegion = null;
+        let regionSites = [];
+        
+        // Show status message
+        function showStatus(message, type) {
+            const statusContainer = document.getElementById('statusMessage');
+            statusContainer.innerHTML = message;
+            statusContainer.className = 'status ' + type;
+        }
+        
+        // Initialize Map
+        function initMap() {
+            console.log('Initializing Map...');
+            
+            const pakistanCenter = [27.7052, 68.8584];
+            
+            map = L.map('map').setView(pakistanCenter, 8);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            showStatus('✅ Map initialized. Please upload your Locations.xlsx file.', 'success');
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // File input handler
+            document.getElementById('excelFile').addEventListener('change', handleFileSelect);
+            
+            // Region buttons
+            document.querySelectorAll('.region-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Set selected region
+                    selectedRegion = this.dataset.region;
+                    console.log('Selected region:', selectedRegion);
+                    
+                    // Enable show button
+                    document.getElementById('showAllBtn').disabled = false;
+                });
+            });
+            
+            // Show button
+            document.getElementById('showAllBtn').addEventListener('click', showSelectedRegion);
+            
+            // Reset button
+            document.getElementById('resetBtn').addEventListener('click', resetMap);
+        }
+        
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('fileName').textContent = file.name;
+            
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                return;
+            }
+            
+            showStatus('🔄 Reading Excel file...', 'loading');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    console.log('Excel data loaded:', jsonData.length, 'rows');
+                    processData(jsonData);
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showStatus(`❌ Error reading Excel file: ${error.message}`, 'error');
+                }
+            };
+            reader.onerror = function() {
+                showStatus('❌ Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Process data from Excel
+        function processData(data) {
+            try {
+                showStatus('🔍 Processing Excel data...', 'loading');
+                
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    throw new Error('Invalid data format or empty dataset');
+                }
+                
+                console.log('Header row:', data[0]);
+                
+                // Clear existing data
+                sitesData = [];
+                
+                // Process rows (skip header)
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    
+                    if (!row || row.length < 4) continue;
+                    
+                    const siteId = row[0] || '';
+                    const subRegion = row[1] || '';
+                    const region = row[2] || '';
+                    const latLngData = row[3] || '';
+                    
+                    // Skip rows with missing required data
+                    if (!siteId || !subRegion || !region) continue;
+                    
+                    // Skip rows with empty location data
+                    if (!latLngData || latLngData.trim() === '') continue;
+                    
+                    // Parse coordinates
+                    const cleanData = latLngData.replace(/[°\s]+/g, ' ').trim();
+                    const coords = cleanData.split(' ');
+                    
+                    if (coords.length < 2) continue;
+                    
+                    const lat = parseFloat(coords[0].trim());
+                    const lng = parseFloat(coords[1].trim());
+                    
+                    if (isNaN(lat) || isNaN(lng)) continue;
+                    
+                    // Basic coordinate validation (rough bounds for Pakistan)
+                    if (lat < 20 || lat > 38 || lng < 60 || lng > 80) continue;
+                    
+                    sitesData.push({
+                        siteId: siteId.trim(),
+                        subRegion: subRegion.trim(),
+                        region: region.trim(),
+                        lat: lat,
+                        lng: lng
+                    });
+                }
+                
+                console.log('Processed', sitesData.length, 'sites from Excel data');
+                
+                if (sitesData.length === 0) {
+                    throw new Error('No valid site data found in Excel file');
+                }
+                
+                showStatus(`✅ Successfully loaded ${sitesData.length} sites from Excel file. Select a region to display.`, 'success');
+                
+                // Enable region buttons
+                document.querySelectorAll('.region-btn').forEach(btn => {
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                });
+                
+            } catch (error) {
+                console.error('Error processing data:', error);
+                showStatus(`❌ Error processing data: ${error.message}`, 'error');
+            }
+        }
+        
+        // Show selected region
+        function showSelectedRegion() {
+            if (!selectedRegion) {
+                showStatus('❌ Please select a region first', 'error');
+                return;
+            }
+            
+            showStatus(`🔄 Loading sites for ${selectedRegion}...`, 'loading');
+            
+            // Filter sites for selected region
+            regionSites = sitesData.filter(site => site.region === selectedRegion);
+            
+            if (regionSites.length === 0) {
+                showStatus(`❌ No sites found for region: ${selectedRegion}`, 'error');
+                return;
+            }
+            
+            console.log('Sites for', selectedRegion, ':', regionSites.length);
+            
+            // Display data on map
+            displayDataOnMap();
+            
+            // Update sidebar
+            updateSidebar();
+            
+            showStatus(`✅ Displaying ${regionSites.length} sites for ${selectedRegion}`, 'success');
+        }
+        
+        // Display data on map
+        function displayDataOnMap() {
+            console.log('Displaying', regionSites.length, 'sites on map for region:', selectedRegion);
+            
+            // Clear existing markers
+            clearMarkers();
+            
+            // Get unique sub-regions
+            const subRegions = [...new Set(regionSites.map(site => site.subRegion))];
+            
+            // Create markers for each site
+            regionSites.forEach((site, index) => {
+                const marker = L.marker([site.lat, site.lng]).addTo(map)
+                    .bindPopup(`
+                        <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                            <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${site.siteId}</h3>
+                            <p style="margin: 5px 0;"><strong>Sub Region:</strong> ${site.subRegion}</p>
+                            <p style="margin: 5px 0;"><strong>Region:</strong> ${site.region}</p>
+                            <p style="margin: 5px 0;"><strong>Coordinates:</strong> ${site.lat.toFixed(6)}, ${site.lng.toFixed(6)}</p>
+                        </div>
+                    `)
+                    .on('click', function() {
+                        // Highlight in site list
+                        highlightSiteInList(site);
+                    });
+                
+                markers.push(marker);
+            });
+            
+            // Fit map to bounds if we have markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        // Clear all markers
+        function clearMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+        }
+        
+        // Update sidebar with region information
+        function updateSidebar() {
+            // Update region info
+            const regionInfo = document.getElementById('regionInfo');
+            
+            // Get unique sub-regions and site count
+            const subRegions = [...new Set(regionSites.map(site => site.subRegion))];
+            const siteCount = regionSites.length;
+            
+            regionInfo.innerHTML = `
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2c3e50; margin-top: 0;">${selectedRegion}</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> <strong>Total Sites:</strong> ${siteCount}</p>
+                    <p><i class="fas fa-project-diagram"></i> <strong>Sub Regions:</strong> ${subRegions.length}</p>
+                </div>
+                
+                <h3>Sub Regions in ${selectedRegion}:</h3>
+                <ul style="margin: 15px 0; padding-left: 20px;">
+                    ${subRegions.map(subRegion => {
+                        const count = regionSites.filter(s => s.subRegion === subRegion).length;
+                        return `<li style="margin: 8px 0;"><strong>${subRegion}</strong> (${count} sites)</li>`;
+                    }).join('')}
+                </ul>
+            `;
+            
+            // Update site list
+            updateSiteList();
+            
+            // Update stats
+            document.getElementById('totalSites').textContent = siteCount;
+            document.getElementById('subRegions').textContent = subRegions.length;
+        }
+        
+        // Update site list in sidebar
+        function updateSiteList() {
+            const siteList = document.getElementById('siteList');
+            siteList.innerHTML = '';
+            
+            if (regionSites.length === 0) {
+                siteList.innerHTML = '<p style="text-align: center; color: #7f8c8d;">No sites to display</p>';
+                return;
+            }
+            
+            // Group sites by sub-region
+            const groupedSites = {};
+            regionSites.forEach(site => {
+                if (!groupedSites[site.subRegion]) {
+                    groupedSites[site.subRegion] = [];
+                }
+                groupedSites[site.subRegion].push(site);
+            });
+            
+            // Display sites grouped by sub-region
+            Object.keys(groupedSites).forEach(subRegion => {
+                const subRegionHeader = document.createElement('div');
+                subRegionHeader.innerHTML = `
+                    <h3 style="color: #3498db; border-bottom: 1px solid #eee; padding-bottom: 10px; margin: 20px 0 10px 0;">
+                        <i class="fas fa-layer-group"></i> ${subRegion}
+                        <span style="float: right; background: #3498db; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">
+                            ${groupedSites[subRegion].length}
+                        </span>
+                    </h3>
+                `;
+                siteList.appendChild(subRegionHeader);
+                
+                groupedSites[subRegion].forEach(site => {
+                    const siteItem = document.createElement('div');
+                    siteItem.className = 'site-item';
+                    siteItem.innerHTML = `
+                        <h4>${site.siteId}</h4>
+                        <p><i class="fas fa-location-arrow"></i> ${site.lat.toFixed(6)}, ${site.lng.toFixed(6)}</p>
+                    `;
+                    siteItem.dataset.siteId = site.siteId;
+                    
+                    // Add click event to center map on this site
+                    siteItem.addEventListener('click', () => {
+                        map.setView([site.lat, site.lng], 15);
+                        
+                        // Find and open the popup for this site
+                        const marker = markers.find(m => 
+                            m.getLatLng().lat.toFixed(6) === site.lat.toFixed(6) && 
+                            m.getLatLng().lng.toFixed(6) === site.lng.toFixed(6)
+                        );
+                        if (marker) {
+                            marker.openPopup();
+                        }
+                        
+                        // Highlight in list
+                        highlightSiteInList(site);
+                    });
+                    
+                    siteList.appendChild(siteItem);
+                });
+            });
+        }
+        
+        // Highlight site in list
+        function highlightSiteInList(site) {
+            // Remove highlight from all items
+            document.querySelectorAll('.site-item').forEach(item => {
+                item.style.backgroundColor = '#f8f9fa';
+                item.style.borderLeft = '4px solid #3498db';
+            });
+            
+            // Highlight the selected item
+            const selectedItem = document.querySelector(`.site-item[data-site-id="${site.siteId}"]`);
+            if (selectedItem) {
+                selectedItem.style.backgroundColor = '#d1e7ff';
+                selectedItem.style.borderLeft = '4px solid #1a73e8';
+            }
+        }
+        
+        // Reset map
+        function resetMap() {
+            // Clear markers
+            clearMarkers();
+            
+            // Reset view
+            map.setView([27.7052, 68.8584], 8);
+            
+            // Reset UI
+            document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('showAllBtn').disabled = true;
+            document.getElementById('regionInfo').innerHTML = `
+                <p style="text-align: center; color: #7f8c8d; margin: 20px 0;">
+                    Please upload an Excel file and select a region to view site information.
+                </p>
+            `;
+            document.getElementById('siteList').innerHTML = '';
+            document.getElementById('totalSites').textContent = '0';
+            document.getElementById('subRegions').textContent = '0';
+            
+            // Reset variables
+            selectedRegion = null;
+            regionSites = [];
+            
+            showStatus('🔄 Map reset. Please select a region to display.', 'success');
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+        });
+    </script>
+</body>
+</html>

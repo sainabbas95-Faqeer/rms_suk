@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SPD Data Debug</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>SPD Data Debugger</h1>
+    <div id="output"></div>
+    <script>
+        fetch('DB.xlsx')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('DB.xlsx not found (' + response.status + ')');
+                }
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                const output = document.getElementById('output');
+                
+                output.innerHTML += '<h2>Sheet Names:</h2><ul>';
+                workbook.SheetNames.forEach(name => {
+                    output.innerHTML += `<li>${name}</li>`;
+                });
+                output.innerHTML += '</ul>';
+                
+                // Show data from SPD sheet if it exists
+                if (workbook.SheetNames.includes('SPD')) {
+                    const worksheet = workbook.Sheets['SPD'];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    output.innerHTML += `<h2>Data from "SPD" sheet (${jsonData.length} rows):</h2>`;
+                    
+                    // Show first 10 rows
+                    const table = document.createElement('table');
+                    table.border = '1';
+                    table.style.borderCollapse = 'collapse';
+                    table.style.fontSize = '12px';
+                    
+                    for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                        const row = document.createElement('tr');
+                        const rowData = jsonData[i];
+                        
+                        if (rowData && Array.isArray(rowData)) {
+                            for (let j = 0; j < Math.min(12, rowData.length); j++) {
+                                const cell = document.createElement('td');
+                                cell.style.padding = '5px';
+                                cell.style.border = '1px solid #ccc';
+                                cell.textContent = rowData[j] !== null && rowData[j] !== undefined ? rowData[j] : '';
+                                row.appendChild(cell);
+                            }
+                        }
+                        
+                        table.appendChild(row);
+                    }
+                    
+                    output.appendChild(table);
+                    
+                    // Count SPD alarms
+                    let spdCount = 0;
+                    let headerRow = 0;
+                    
+                    // Find header row
+                    for (let i = 0; i < Math.min(3, jsonData.length); i++) {
+                        const row = jsonData[i];
+                        if (row && Array.isArray(row)) {
+                            const rowText = row.map(cell => typeof cell === 'string' ? cell.toLowerCase() : '').join(' ');
+                            if (rowText.includes('site') && rowText.includes('alarm') && rowText.includes('aging')) {
+                                headerRow = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Count SPD alarms
+                    for (let i = headerRow + 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row && Array.isArray(row) && row.length > 6) {
+                            const alarmType = row[6]; // Column G
+                            if (alarmType && typeof alarmType === 'string' && alarmType.toLowerCase().trim() === 'spd') {
+                                spdCount++;
+                            }
+                        }
+                    }
+                    
+                    output.innerHTML += `<h3>SPD Alarm Count: ${spdCount}</h3>`;
+                } else {
+                    output.innerHTML += '<p style="color: red;">No "SPD" sheet found!</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

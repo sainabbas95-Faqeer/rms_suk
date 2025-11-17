@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug SPD.xlsx</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>SPD.xlsx Debug Tool</h1>
+    <button onclick="loadAndAnalyze()">Load and Analyze SPD.xlsx</button>
+    <div id="output"></div>
+
+    <script>
+        function loadAndAnalyze() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Loading SPD.xlsx...</p>';
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    output.innerHTML = '<h2>SPD.xlsx Analysis</h2>';
+                    output.innerHTML += '<p>Total rows: ' + jsonData.length + '</p>';
+                    
+                    // Show first 10 rows
+                    output.innerHTML += '<h3>First 10 rows:</h3><pre>' + JSON.stringify(jsonData.slice(0, 10), null, 2) + '</pre>';
+                    
+                    // Count SPD alarms in Column G (index 6)
+                    let spdCount = 0;
+                    const startIndex = jsonData.length > 0 && typeof jsonData[0][0] === 'string' && jsonData[0][0].toLowerCase().includes('site') ? 1 : 0;
+                    
+                    for (let i = startIndex; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        const columnG = row[6] || ''; // Column G
+                        if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                            spdCount++;
+                        }
+                    }
+                    
+                    output.innerHTML += '<h3>SPD Count Analysis</h3>';
+                    output.innerHTML += '<p>Start index (header detection): ' + startIndex + '</p>';
+                    output.innerHTML += '<p>Total SPD alarms in Column G: ' + spdCount + '</p>';
+                    
+                    // Show first 10 rows with Column G and L values
+                    output.innerHTML += '<h3>Column G and L Values (First 10 rows):</h3>';
+                    for (let i = startIndex; i < Math.min(startIndex + 10, jsonData.length); i++) {
+                        const row = jsonData[i];
+                        const columnG = row[6] || '';
+                        const columnL = row[11] || '';
+                        output.innerHTML += '<p>Row ' + i + ' - Column G: "' + columnG + '", Column L: "' + columnL + '"</p>';
+                    }
+                })
+                .catch(error => {
+                    output.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                });
+        }
+    </script>
+</body>
+</html>

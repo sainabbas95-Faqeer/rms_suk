@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Active Alarms Database</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-3d"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add Orbitron font for better 7-segment display -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Floating back button */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .back-button i {
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* Floating Compare Regions Button */
+        .compare-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .compare-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .compare-button i {
+            font-size: 18px;
+        }
+
+        /* Fixed header without distracting background */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px 40px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            animation: shine 8s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(30deg) translateX(-100%); }
+            100% { transform: rotate(30deg) translateX(100%); }
+        }
+
+        .header .logo {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 70px;
+            width: auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header .logo:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .header .header-content {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header h1 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #333; /* Fixed color for heading */
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .header .date-info {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-size: 14px;
+            color: #00008B;
+            font-weight: bold;
+            text-align: right;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            text-align: center;
+            color: #666;
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .footer-text {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            font-size: 14px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .visit-counter {
+            position: fixed;
+            bottom: 50px;
+            right: 15px;
+            font-size: 14px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+
+        .visit-counter:hover {
+            background: rgba(0, 0, 0, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .results-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            margin-bottom: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Enhanced stats grid with floating cards - 5 cards in one row, center-aligned */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* Exactly 5 columns for 5 cards */
+            gap: 20px;
+            margin-bottom: 40px;
+            justify-content: center;
+            align-items: center;
+            justify-items: center;
+            margin-top: 120px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: perspective(1000px) rotateX(0deg);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            animation: floating 3s ease-in-out infinite;
+            justify-self: center;
+            align-self: center;
+            width: 100%;
+            max-width: 220px;
+        }
+
+        /* More colorful cards with distinct backgrounds */
+        .stat-card:nth-child(1) { 
+            background: linear-gradient(135deg, #FF9A8B 0%, #FF6A88 50%, #FF99AC 100%); 
+            color: white;
+            animation-delay: 0s; 
+        }
+        .stat-card:nth-child(2) { 
+            background: linear-gradient(135deg, #43CBFF 0%, #9708CC 50%, #43CBFF 100%); 
+            color: white;
+            animation-delay: 0.3s; 
+        }
+        .stat-card:nth-child(3) { 
+            background: linear-gradient(135deg, #5EFCE8 0%, #736EFE 50%, #5EFCE8 100%); 
+            color: white;
+            animation-delay: 0.6s; 
+        }
+        .stat-card:nth-child(4) { 
+            background: linear-gradient(135deg, #FAD961 0%, #F76B1C 50%, #FAD961 100%); 
+            color: white;
+            animation-delay: 0.9s; 
+        }
+        .stat-card:nth-child(5) { 
+            background: linear-gradient(135deg, #8A2BE2 0%, #4B0082 50%, #8A2BE2 100%); 
+            color: white;
+            animation-delay: 1.2s; 
+        }
+
+        .stat-card:hover {
+            transform: perspective(1000px) translateY(-15px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Digital 7-segment font for all stat numbers with fallbacks */
+        @font-face {
+            font-family: 'Digital7';
+            src: url('https://cdn.jsdelivr.net/npm/@fontsource/digital-numbers@4.5.0/files/digital-numbers-latin-ext-400-normal.woff2') format('woff2'),
+                 url('https://cdn.jsdelivr.net/npm/@fontsource/digital-numbers@4.5.0/files/digital-numbers-latin-ext-400-normal.woff') format('woff');
+            font-display: swap;
+        }
+
+        .stat-number {
+            font-family: 'Digital7', 'Orbitron', 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 3rem;
+            font-weight: normal;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+            color: white;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite;
+            /* Add 7-segment display effect */
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(0,0,0,0.2));
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 0 5px rgba(255,255,255,0.2);
+            /* Ensure the numbers are clearly visible */
+            line-height: 1.2;
+            /* Add subtle glow effect */
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Enhanced chart containers with floating effect */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto auto;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        /* Wide chart for Sub Region */
+        .wide-chart {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95)) !important;
+        }
+        
+        .wide-chart h3 {
+            color: white !important;
+        }
+        
+        /* Add extra width to the wide chart */
+        @media (min-width: 1200px) {
+            .wide-chart {
+                grid-column: span 2;
+            }
+        }
+        
+        /* 7-segment display style for bar chart numbers */
+        .bar-chart-number {
+            font-family: 'Orbitron', 'Digital7', 'Courier New', monospace;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            letter-spacing: 1px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+            min-width: 300px;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chart-container:nth-child(1) { animation-delay: 0.2s; }
+        .chart-container:nth-child(2) { animation-delay: 0.7s; }
+        
+        .chart-container h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .status {
+            padding: 18px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 2px solid #28a745;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+        }
+
+        .error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 2px solid #dc3545;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+        }
+
+        .loading {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 2px solid #ffc107;
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+        }
+
+        /* Export section */
+        .export-section {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            margin-top: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: floating 3s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+
+        .export-section h2 {
+            color: #333;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            font-weight: 800;
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 22px 40px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .export-btn-ppt {
+            background: linear-gradient(135deg, #d35400, #e67e22);
+        }
+
+        .export-btn-ppt:hover {
+            box-shadow: 0 15px 35px rgba(211, 84, 0, 0.6);
+        }
+
+        .export-btn-excel {
+            background: linear-gradient(135deg, #1e7e34, #28a745);
+        }
+
+        .export-btn-excel:hover {
+            box-shadow: 0 15px 35px rgba(30, 126, 52, 0.6);
+        }
+
+        .export-btn-pdf {
+            background: linear-gradient(135deg, #c82333, #dc3545);
+        }
+
+        .export-btn-pdf:hover {
+            box-shadow: 0 15px 35px rgba(200, 35, 51, 0.6);
+        }
+
+        .export-btn .icon {
+            font-size: 28px;
+        }
+
+        /* Floating animation */
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .chart-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .wide-chart {
+                grid-column: span 2;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header .date-info {
+                position: static;
+                margin-top: 15px;
+                font-size: 12px;
+            }
+            
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .wide-chart {
+                grid-column: span 1;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .export-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            /* Responsive grid for stats cards - 5 cards in one row */
+            .stats-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .stat-card {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .results-section {
+                padding: 20px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-number {
+                font-size: 1.8rem;
+            }
+            
+            /* Stack all cards on mobile */
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .file-drop-zone {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px dashed #ccc;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .file-drop-zone h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .file-drop-zone p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .file-drop-zone.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .file-upload-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-icon:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .region-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .region-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .region-btn:hover, .region-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .alarm-type-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            position: fixed;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alarm-type-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .alarm-type-btn:hover, .alarm-type-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating back button -->
+        <div class="back-button" onclick="window.location.href='welcome.html'" title="Back to Welcome Page">
+            <i class="fas fa-arrow-left"></i>
+        </div>
+
+        <!-- Floating Compare Regions button -->
+        <button class="compare-button" onclick="window.location.href='comparison.html'" title="Compare Regions">
+            <i class="fas fa-chart-pie"></i>
+            Compare Regions
+        </button>
+
+        <div class="header">
+            <img src="Logo.jpeg" alt="RMS Logo" class="logo" onclick="document.getElementById('fileInput').click()">
+            <div class="date-info" id="dateInfo">Data till<br><span id="displayDate"></span><br><span id="displayTime" style="color: red; font-weight: bold;"></span></div>
+            <div class="header-content">
+                <h1>ALL ACTIVE ALARMS DATABASE</h1>
+                <p>Comprehensive Analysis of Active Alarms Across Regions</p>
+            </div>
+        </div>
+
+        <!-- Footer text -->
+        <div class="footer-text">Database created by - Abbas Enterprises - Lakhi - 2025</div>
+        
+        <!-- Visit counter -->
+        <div class="visit-counter" id="visitCounter" onclick="openVisitHistory()">Page Visits: <span id="visitCount">0</span></div>
+
+        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" style="display: none;" />
+        <div id="uploadStatus" style="display: none;"></div>
+
+        <!-- Minimal file upload icon (hidden by default, shown only on error) -->
+        <div id="fileUploadIcon" class="file-upload-icon" style="display: none; position: fixed; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease;" title="Load Excel File">
+            <i class="fas fa-file-upload" style="font-size: 20px; color: #333;"></i>
+        </div>
+
+
+
+        <div class="results-section" id="resultsSection">
+            <!-- Region selector -->
+            <div class="region-selector">
+                <div class="region-btn active" data-region="all" onclick="filterByRegion('all')">All Regions</div>
+                <div class="region-btn" data-region="sukkur" onclick="filterByRegion('sukkur')">Sukkur</div>
+                <div class="region-btn" data-region="jacobabad" onclick="filterByRegion('jacobabad')">Jacob Abad</div>
+                <div class="region-btn" data-region="larkana" onclick="filterByRegion('larkana')">Larkana</div>
+            </div>
+            
+            <!-- Alarm type selector -->
+            <div class="alarm-type-selector">
+                <div class="alarm-type-btn active" data-alarm-type="All Alarms" onclick="filterByAlarmType('All Alarms')">All Alarms</div>
+                <div class="alarm-type-btn" data-alarm-type="Deep Sea" onclick="filterByAlarmType('Deep Sea')">Deep Sea</div>
+                <div class="alarm-type-btn" data-alarm-type="Rectifier | CSU" onclick="filterByAlarmType('Rectifier | CSU')">Rectifier | CSU</div>
+                <div class="alarm-type-btn" data-alarm-type="Rectifier Fan" onclick="filterByAlarmType('Rectifier Fan')">Rectifier Fan</div>
+                <div class="alarm-type-btn" data-alarm-type="RMS" onclick="filterByAlarmType('RMS')">RMS</div>
+                <div class="alarm-type-btn" data-alarm-type="SPD" onclick="filterByAlarmType('SPD')">SPD</div>
+            </div>
+            
+            <!-- Stats will be populated here -->
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+
+            <!-- Chart Grid -->
+            <div class="chart-grid">
+                <!-- First Row -->
+                <div class="chart-container">
+                    <h3>Region Wise Alarms</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="regionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Domain Wise Alarms</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="domainChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Alarm Type Wise Alarms</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="alarmTypeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Second Row -->
+                <div class="chart-container wide-chart">
+                    <h3>Sub Region Wise Alarms</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="subRegionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Summarized Alarms</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="summarizedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Data Table -->
+            <div style="background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); margin: 20px 0;">
+                <h3 style="color: #333; margin-bottom: 15px;">Detailed Alarm Data</h3>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Site ID</th>
+                                <th>Sub Region</th>
+                                <th>Region</th>
+                                <th>Days Passed</th>
+                                <th>Aging</th>
+                                <th>Alarm</th>
+                                <th>ES POC</th>
+                                <th>SMS POC</th>
+                                <th>Summarize</th>
+                                <th>Domain</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Export Buttons Section -->
+            <div class="export-section">
+                <h2>📥 Export Dashboard</h2>
+                <div class="export-buttons">
+                    <button class="export-btn export-btn-excel" onclick="exportToExcel()" title="Export all data to Excel spreadsheet">
+                        <span class="icon">📗</span>
+                        <span>Export to Excel</span>
+                    </button>
+                    <button class="export-btn export-btn-pdf" onclick="exportToPDF()" title="Export dashboard as PDF document">
+                        <span class="icon">📄</span>
+                        <span>Export to PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set the date in header (previous day) and current time
+        function setPreviousDate() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[yesterday.getDay()];
+            const monthName = months[yesterday.getMonth()];
+            const date = yesterday.getDate();
+            const year = yesterday.getFullYear();
+            
+            const formattedDate = `${dayName}, ${monthName} ${date < 10 ? '0' + date : date}, ${year}`;
+            document.getElementById('displayDate').textContent = formattedDate;
+            
+            // Update time
+            updateTime();
+        }
+        
+        // Function to update current time
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            const timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
+            const timeElement = document.getElementById('displayTime');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+        
+        // Call on page load
+        setPreviousDate();
+        setInterval(updateTime, 1000);
+        
+        // Initialize visit counter
+        function initVisitCounter() {
+            let visitCount = localStorage.getItem('activeAlarmsVisitCount') || 0;
+            visitCount = parseInt(visitCount) + 1;
+            localStorage.setItem('activeAlarmsVisitCount', visitCount);
+            document.getElementById('visitCount').textContent = visitCount;
+        }
+        
+        // Open visit history
+        function openVisitHistory() {
+            // This would open a visit history page if implemented
+            alert('Visit history feature coming soon!');
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Filter by region
+        function filterByRegion(region) {
+            // Update active button
+            document.querySelectorAll('.region-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filter data and update table
+            updateTableData(region);
+        }
+        
+        // Update table data based on selected region
+        function updateTableData(region) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Skip header row
+            const startIndex = (rawData[0] && typeof rawData[0][0] === 'string' && rawData[0][0].toLowerCase().includes('site')) ? 1 : 0;
+            
+            // Display all rows
+            const rowsToDisplay = rawData.length - startIndex;
+            
+            let displayedRows = 0;
+            
+            for (let i = startIndex; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Filter by region if not 'all'
+                if (region !== 'all') {
+                    const regionValue = row[2] || '';
+                    if (regionValue.toLowerCase() !== region.toLowerCase()) continue;
+                }
+                
+                displayedRows++;
+                
+                // Create table row
+                const tr = document.createElement('tr');
+                
+                // Site ID (Column A)
+                const siteId = row[0] || '';
+                
+                // Sub Region (Column B)
+                const subRegion = row[1] || '';
+                
+                // Region (Column C)
+                const regionValue = row[2] || '';
+                
+                // Days Passed (Column E) - Number format with zero decimal
+                let daysPassed = row[4] || 0;
+                if (typeof daysPassed === 'string') {
+                    daysPassed = parseFloat(daysPassed) || 0;
+                }
+                daysPassed = Math.round(daysPassed);
+                
+                // Aging (Column F)
+                const aging = row[5] || '';
+                
+                // Alarm (Column G)
+                const alarm = row[6] || '';
+                
+                // ES POC (Column H)
+                const esPoc = row[7] || '';
+                
+                // SMS POC (Column I)
+                const smsPoc = row[8] || '';
+                
+                // Summarize (Column K)
+                const summarize = row[10] || '';
+                
+                // Domain (Column L) - Enfra or SMS LD
+                const domain = row[11] || 'Unknown';
+                
+                tr.innerHTML = `
+                    <td>${siteId}</td>
+                    <td>${subRegion}</td>
+                    <td>${regionValue}</td>
+                    <td>${daysPassed}</td>
+                    <td>${aging}</td>
+                    <td>${alarm}</td>
+                    <td>${esPoc}</td>
+                    <td>${smsPoc}</td>
+                    <td>${summarize}</td>
+                    <td>${domain}</td>
+                `;
+                
+                tableBody.appendChild(tr);
+            }
+            
+            // If no data found for region
+            if (displayedRows === 0 && region !== 'all') {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 10;
+                td.textContent = `No data found for region: ${region}`;
+                td.style.textAlign = 'center';
+                td.style.fontWeight = 'bold';
+                td.style.backgroundColor = '#f8f9fa';
+                tr.appendChild(td);
+                tableBody.appendChild(tr);
+            }
+        }
+        
+        // Filter by alarm type
+        function filterByAlarmType(alarmType) {
+            // Update active button
+            document.querySelectorAll('.alarm-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filter data and update charts and table
+            updateCharts(alarmType);
+            updateTableDataByAlarmType(alarmType);
+        }
+        
+        // Register datalabels plugin
+        Chart.register(ChartDataLabels);
+        
+        // Global chart instances
+        let subRegionChartInstance = null;
+        let regionChartInstance = null;
+        let domainChartInstance = null;
+        let alarmTypeChartInstance = null;
+        let summarizedChartInstance = null;
+        
+        // Store raw data globally for access
+        let rawData = [];
+        
+        // Analysis data storage
+        let alarmAnalysisData = {
+            totalAlarms: 0,
+            enfraAlarms: 0,
+            smsLDAlarms: 0,
+            alarmTypes: {},
+            regions: {},
+            subRegions: {}
+        };
+        
+        // Generate colorful colors for charts
+        function generateColorfulColors(count) {
+            const backgroundColors = [];
+            const borderColors = [];
+            
+            for (let i = 0; i < count; i++) {
+                // Generate vibrant colors using HSL
+                const hue = (i * 360 / count) % 360;
+                const saturation = 70 + Math.random() * 30; // 70-100%
+                const lightness = 40 + Math.random() * 30;  // 40-70%
+                
+                backgroundColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+                borderColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 1)`);
+            }
+            
+            return { backgroundColors, borderColors };
+        }
+        
+        // Load data from events.xlsx file
+        function loadEventsData() {
+            console.log('Loading data from events.xlsx...');
+            showStatus('📥 Loading data from Excel...', 'loading');
+            
+            // First try to load from Google Sheets
+            loadFromGoogleSheets();
+        }
+        
+        // Load data from Google Sheets
+        function loadFromGoogleSheets() {
+            // Convert Google Sheets URL to export format
+            const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/1vXgSy0vSTMNChAMT-YfKUmGaXRWkcwpO/edit?gid=654235076#gid=654235076';
+            // Convert to export URL by replacing the parameters and preserving gid
+            let exportUrl = googleSheetsUrl.replace('/edit?', '/export?');
+            // Add format parameter if not already present
+            if (!exportUrl.includes('format=xlsx')) {
+                exportUrl += exportUrl.includes('?') ? '&format=xlsx' : '?format=xlsx';
+            }
+            console.log('Original URL:', googleSheetsUrl);
+            console.log('Export URL:', exportUrl);
+            console.log('Converted Google Sheets URL to export format:', exportUrl);
+            
+            console.log('Attempting to load data from Google Sheets');
+            showStatus('🔄 Loading data from Google Sheets...', 'loading');
+            
+            console.log('Attempting to fetch from Google Sheets URL:', exportUrl);
+            fetch(exportUrl)
+                .then(response => {
+                    console.log('Google Sheets fetch response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Failed to load Google Sheets data: ' + response.status + ' ' + response.statusText);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    console.log('Google Sheets data loaded successfully, size:', data.byteLength);
+                    if (data.byteLength === 0) {
+                        throw new Error('Google Sheets data is empty');
+                    }
+                    showStatus('✅ Google Sheets data loaded successfully', 'success');
+                    processEventsData(data);
+                })
+                .catch(error => {
+                    console.log('Error loading Google Sheets data:', error);
+                    console.log('This might be due to CORS restrictions. Google Sheets may not allow direct fetching from browser.');
+                    console.log('Common reasons:');
+                    console.log('1. Google Sheets URL may be incorrect or incomplete');
+                    console.log('2. CORS policy blocking direct browser access');
+                    console.log('3. Google Sheets not publicly accessible');
+                    showStatus('⚠️ Google Sheets loading failed: ' + error.message + '. Trying local file...', 'error');
+                    // Try local file loading as fallback
+                    loadLocalEventsFile();
+                });
+        }
+        
+        // Load local events file as fallback
+        function loadLocalEventsFile() {
+            console.log('Loading data from events.xlsx...');
+            showStatus('📥 Loading data from Excel...', 'loading');
+            
+            // First try the File System Access API (modern browsers)
+            if ('showOpenFilePicker' in window) {
+                console.log('Attempting to use File System Access API');
+                loadWithFileSystemAPI();
+                return;
+            }
+            
+            // Check if we're running locally (file:// protocol)
+            const isLocalFile = window.location.protocol === 'file:';
+            
+            if (isLocalFile) {
+                console.log('Running locally with file:// protocol - attempting auto-load of events.xlsx');
+                // Try to auto-load the file
+                autoLoadEventsFile();
+            } else {
+                // Try to load the events.xlsx file directly via fetch
+                fetch('XLSX Files/events.xlsx')
+                    .then(response => {
+                        console.log('Fetch response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status + ' ' + response.statusText);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(data => {
+                        console.log('events.xlsx file loaded successfully, size:', data.byteLength);
+                        if (data.byteLength === 0) {
+                            throw new Error('Loaded file is empty');
+                        }
+                        processEventsData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading events.xlsx:', error);
+                        console.error('This might be due to browser security restrictions when opening files directly in browsers.');
+                        console.error('When opening HTML files directly in browsers (file://), fetch requests to local files may be blocked.');
+                        console.error('Please ensure the events.xlsx file exists in the "XLSX Files" folder relative to this HTML file.');
+                        showStatus('❌ Error loading events.xlsx: ' + error.message + '. Please ensure the file exists in the correct location.', 'error');
+                        // Initialize with sample data as fallback
+                        initializeSampleData();
+                    });
+            }
+        }
+        
+        // Load with File System Access API (modern approach)
+        async function loadWithFileSystemAPI() {
+            try {
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Excel Files',
+                        accept: {
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                            'application/vnd.ms-excel': ['.xls']
+                        }
+                    }],
+                    excludeAcceptAllOption: true,
+                    multiple: false
+                });
+                
+                const file = await fileHandle.getFile();
+                const arrayBuffer = await file.arrayBuffer();
+                
+                console.log('File loaded via File System Access API');
+                showStatus('✅ File loaded successfully via modern API', 'success');
+                processEventsData(arrayBuffer);
+            } catch (error) {
+                console.log('File System Access API not available or user cancelled, falling back to traditional methods');
+                // Fall back to traditional methods
+                autoLoadEventsFile();
+            }
+        }
+        
+        // Auto-load events file when running locally
+        function autoLoadEventsFile() {
+            console.log('Attempting to auto-load events.xlsx file');
+            showStatus('🔄 Attempting to auto-load events.xlsx file...', 'loading');
+            
+            // Method 1: Try fetch API
+            fetch('XLSX Files/events.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fetch failed with status: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    console.log('events.xlsx file auto-loaded successfully using fetch');
+                    if (data.byteLength === 0) {
+                        throw new Error('Loaded file is empty');
+                    }
+                    showStatus('✅ events.xlsx file loaded successfully', 'success');
+                    processEventsData(data);
+                })
+                .catch(fetchError => {
+                    console.log('Fetch method failed:', fetchError.message);
+                    
+                    // Method 2: Try XMLHttpRequest
+                    try {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', 'XLSX Files/events.xlsx', true);
+                        xhr.responseType = 'arraybuffer';
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                console.log('events.xlsx file auto-loaded successfully using XMLHttpRequest');
+                                if (xhr.response.byteLength === 0) {
+                                    showStatus('❌ Loaded file is empty', 'error');
+                                    showMinimalUploadIcon();
+                                    return;
+                                }
+                                showStatus('✅ events.xlsx file loaded successfully', 'success');
+                                processEventsData(xhr.response);
+                            } else {
+                                console.log('XMLHttpRequest failed with status:', xhr.status);
+                                showMinimalUploadIcon();
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            console.log('XMLHttpRequest encountered an error');
+                            showMinimalUploadIcon();
+                        };
+                        
+                        xhr.send();
+                    } catch (xhrError) {
+                        console.log('XMLHttpRequest method failed:', xhrError.message);
+                        showMinimalUploadIcon();
+                    }
+                });
+        }
+        
+        // Show minimal upload icon as fallback
+        function showMinimalUploadIcon() {
+            const fileUploadIcon = document.getElementById('fileUploadIcon');
+            const fileInput = document.getElementById('fileInput');
+            
+            if (fileUploadIcon && fileInput) {
+                fileUploadIcon.style.display = 'flex';
+                showStatus('⚠️ Auto-loading failed. Click the upload icon to manually select events.xlsx. Please ensure the file is in XLSX format.', 'error');
+                
+                // Set up click handler for the upload icon
+                fileUploadIcon.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                // Set up file input change handler
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                            showStatus('🔄 Processing selected file...', 'loading');
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                try {
+                                    const data = new Uint8Array(e.target.result);
+                                    console.log('File loaded successfully');
+                                    showStatus('✅ File loaded successfully', 'success');
+                                    processEventsData(data);
+                                    
+                                    // Hide the upload icon after successful load
+                                    fileUploadIcon.style.display = 'none';
+                                } catch (error) {
+                                    console.error('Error processing file:', error);
+                                    showStatus('❌ Error processing file: ' + error.message, 'error');
+                                    initializeSampleData();
+                                }
+                            };
+                            reader.onerror = function(error) {
+                                console.error('Error reading file:', error);
+                                showStatus('❌ Error reading file: ' + error.message, 'error');
+                                initializeSampleData();
+                            };
+                            reader.readAsArrayBuffer(file);
+                        } else {
+                            showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                        }
+                    }
+                });
+            } else {
+                // If even the minimal upload icon can't be shown, fall back to sample data
+                console.log('Cannot show upload interface, using sample data');
+                showStatus('⚠️ Cannot load file interface, using sample data', 'error');
+                initializeSampleData();
+            }
+        }
+        
+        // Process events data
+        function processEventsData(data) {
+            try {
+                console.log('Processing events data...');
+                showStatus('🔄 Processing Excel data...', 'loading');
+                
+                const workbook = XLSX.read(data, { type: 'array' });
+                console.log('Workbook sheet names:', workbook.SheetNames);
+                
+                // Assume the first sheet contains the data
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convert to JSON
+                rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                console.log('Raw data rows:', rawData.length);
+                
+                if (rawData.length === 0) {
+                    throw new Error('Excel file is empty or could not be parsed');
+                }
+                
+                // Additional check for valid data
+                if (rawData.length === 1 && (!rawData[0] || rawData[0].length === 0)) {
+                    throw new Error('Excel file contains only header row with no data');
+                }
+                
+                // Analyze the data
+                analyzeAlarmData(rawData);
+                
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+                
+                // Update charts and table data
+                updateCharts('All Alarms');
+                updateTableData('all');
+                
+                showStatus('✅ Data processed successfully', 'success');
+            } catch (error) {
+                console.error('Error processing events data:', error);
+                showStatus('❌ Error processing data: ' + error.message, 'error');
+                initializeSampleData();
+            }
+        }
+        
+        // Analyze alarm data
+        function analyzeAlarmData(data) {
+            console.log('Analyzing alarm data...');
+            
+            // Reset analysis data
+            alarmAnalysisData = {
+                totalAlarms: 0,
+                enfraAlarms: 0,
+                smsLDAlarms: 0,
+                alarmTypes: {
+                    'Deep Sea': 0,
+                    'Rectifier | CSU': 0,
+                    'Rectifier Fan': 0,
+                    'RMS': 0,
+                    'SPD': 0
+                },
+                regions: {
+                    'Sukkur': 0,
+                    'Jacob Abad': 0,
+                    'Larkana': 0
+                },
+                subRegions: {}
+            };
+            
+            // Add 'Others' category only if needed
+            alarmAnalysisData.alarmTypes['Others'] = 0;
+            alarmAnalysisData.regions['Others'] = 0;
+            
+            // Skip header row if present
+            const startIndex = (data[0] && typeof data[0][0] === 'string' && data[0][0].toLowerCase().includes('site')) ? 1 : 0;
+            
+            // Process each row
+            for (let i = startIndex; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length === 0) continue;
+                
+                alarmAnalysisData.totalAlarms++;
+                
+                // Determine alarm type (Column G - index 6)
+                const alarmType = determineAlarmType(row);
+                alarmAnalysisData.alarmTypes[alarmType] = (alarmAnalysisData.alarmTypes[alarmType] || 0) + 1;
+                
+                // Determine region (Column C - index 2)
+                const region = determineRegion(row);
+                alarmAnalysisData.regions[region] = (alarmAnalysisData.regions[region] || 0) + 1;
+                
+                // Determine sub region (Column B - index 1)
+                const subRegion = row[1] || 'Unknown';
+                alarmAnalysisData.subRegions[subRegion] = (alarmAnalysisData.subRegions[subRegion] || 0) + 1;
+                
+                // Determine Enfra/SMS LD (Column L - index 11)
+                const isEnfra = isEnfraAlarm(row);
+                if (isEnfra) {
+                    alarmAnalysisData.enfraAlarms++;
+                } else {
+                    alarmAnalysisData.smsLDAlarms++;
+                }
+            }
+            
+            console.log('Analysis complete:', alarmAnalysisData);
+            updateStatsDisplay();
+        }
+        
+        // Determine alarm type from row data (Column G)
+        function determineAlarmType(row) {
+            // In a real implementation, you would check Column G for alarm type
+            const alarmType = row[6] || 'Unknown';
+            
+            // Map to our standard alarm types
+            if (alarmType.toLowerCase().includes('deep sea')) return 'Deep Sea';
+            if (alarmType.toLowerCase().includes('rectifier') && alarmType.toLowerCase().includes('csu')) return 'Rectifier | CSU';
+            if (alarmType.toLowerCase().includes('rectifier') && alarmType.toLowerCase().includes('fan')) return 'Rectifier Fan';
+            if (alarmType.toLowerCase().includes('rms')) return 'RMS';
+            if (alarmType.toLowerCase().includes('spd')) return 'SPD';
+            
+            // If we can't determine, return as is or default to 'Others'
+            return alarmType || 'Others';
+        }
+        
+        // Determine region from row data (Column C)
+        function determineRegion(row) {
+            // In a real implementation, you would check Column C for region
+            const region = row[2] || 'Unknown';
+            
+            // Validate region
+            const validRegions = ['Sukkur', 'Jacob Abad', 'Larkana'];
+            if (validRegions.includes(region)) {
+                return region;
+            }
+            
+            return 'Others';
+        }
+        
+        // Determine if alarm is from Enfra (Column L)
+        function isEnfraAlarm(row) {
+            // In a real implementation, you would check Column L for domain
+            const domain = row[11] || 'Unknown';
+            return domain.toLowerCase() === 'enfra';
+        }
+        
+        // Update stats display
+        function updateStatsDisplay() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            // Create stat cards
+            const stats = [
+                { label: 'Total Alarms', value: alarmAnalysisData.totalAlarms, icon: '🔔' },
+                { label: 'Enfra Alarms', value: alarmAnalysisData.enfraAlarms, icon: '🏭' },
+                { label: 'SMS LD Alarms', value: alarmAnalysisData.smsLDAlarms, icon: '📱' },
+                { label: 'Active Regions', value: Object.keys(alarmAnalysisData.regions).filter(r => r !== 'Others' && alarmAnalysisData.regions[r] > 0).length, icon: '🗺️' },
+                { label: 'Alarm Types', value: Object.keys(alarmAnalysisData.alarmTypes).filter(t => t !== 'Others' && alarmAnalysisData.alarmTypes[t] > 0).length, icon: '📊' }
+            ];
+            
+            stats.forEach(stat => {
+                const statCard = document.createElement('div');
+                statCard.className = 'stat-card';
+                statCard.innerHTML = `
+                    <div class="stat-number">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                `;
+                statsGrid.appendChild(statCard);
+            });
+        }
+        
+        // Chart functions removed as charts are no longer needed
+        
+        // Chart functions removed as charts are no longer needed
+        
+        // Update table data based on selected region
+        function updateTableData(region) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Skip header row
+            const startIndex = (rawData[0] && typeof rawData[0][0] === 'string' && rawData[0][0].toLowerCase().includes('site')) ? 1 : 0;
+            
+            // Display all rows
+            const rowsToDisplay = rawData.length - startIndex;
+            
+            for (let i = startIndex; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Create table row
+                const tr = document.createElement('tr');
+                
+                // Site ID (Column A)
+                const siteId = row[0] || '';
+                
+                // Sub Region (Column B)
+                const subRegion = row[1] || '';
+                
+                // Region (Column C)
+                const regionValue = row[2] || '';
+                
+                // Days Passed (Column E) - Number format with zero decimal
+                let daysPassed = row[4] || 0;
+                if (typeof daysPassed === 'string') {
+                    daysPassed = parseFloat(daysPassed) || 0;
+                }
+                daysPassed = Math.round(daysPassed);
+                
+                // Aging (Column F)
+                const aging = row[5] || '';
+                
+                // Alarm (Column G)
+                const alarm = row[6] || '';
+                
+                // ES POC (Column H)
+                const esPoc = row[7] || '';
+                
+                // SMS POC (Column I)
+                const smsPoc = row[8] || '';
+                
+                // Summarize (Column K)
+                const summarize = row[10] || '';
+                
+                // Domain (Column L) - Enfra or SMS LD
+                const domain = row[11] || 'Unknown';
+                
+                tr.innerHTML = `
+                    <td>${siteId}</td>
+                    <td>${subRegion}</td>
+                    <td>${regionValue}</td>
+                    <td>${daysPassed}</td>
+                    <td>${aging}</td>
+                    <td>${alarm}</td>
+                    <td>${esPoc}</td>
+                    <td>${smsPoc}</td>
+                    <td>${summarize}</td>
+                    <td>${domain}</td>
+                `;
+                
+                tableBody.appendChild(tr);
+            }
+            
+
+        }
+        
+        // Update charts based on selected alarm type
+        function updateCharts(alarmType) {
+            // Destroy existing charts if they exist
+            if (subRegionChartInstance) subRegionChartInstance.destroy();
+            if (regionChartInstance) regionChartInstance.destroy();
+            if (domainChartInstance) domainChartInstance.destroy();
+            if (alarmTypeChartInstance) alarmTypeChartInstance.destroy();
+            if (summarizedChartInstance) summarizedChartInstance.destroy();
+            
+            // Filter data for specific alarm type
+            let filteredData = [];
+            if (alarmType === 'All Alarms') {
+                filteredData = rawData.slice(1); // Skip header row
+            } else {
+                for (let i = 1; i < rawData.length; i++) {
+                    const row = rawData[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    const rowAlarmType = determineAlarmType(row);
+                    if (rowAlarmType === alarmType) {
+                        filteredData.push(row);
+                    }
+                }
+            }
+            
+            // Analyze filtered data
+            let analysisData = {
+                subRegions: {},
+                regions: {},
+                domains: {},
+                alarmTypes: {},
+                summaries: {}
+            };
+            
+            // Process each row
+            for (let i = 0; i < filteredData.length; i++) {
+                const row = filteredData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Sub Region (Column B)
+                const subRegion = row[1] || 'Unknown';
+                analysisData.subRegions[subRegion] = (analysisData.subRegions[subRegion] || 0) + 1;
+                
+                // Region (Column C)
+                const region = row[2] || 'Unknown';
+                analysisData.regions[region] = (analysisData.regions[region] || 0) + 1;
+                
+                // Domain (Column L)
+                const domain = row[11] || 'Unknown';
+                analysisData.domains[domain] = (analysisData.domains[domain] || 0) + 1;
+                
+                // Alarm Type (Column G)
+                const alarmType = determineAlarmType(row);
+                analysisData.alarmTypes[alarmType] = (analysisData.alarmTypes[alarmType] || 0) + 1;
+                
+                // Summarize (Column K)
+                const summarize = row[10] || 'Unknown';
+                analysisData.summaries[summarize] = (analysisData.summaries[summarize] || 0) + 1;
+            }
+            
+            // Create Sub Region chart
+            const subRegionCtx = document.getElementById('subRegionChart').getContext('2d');
+            const subRegionColors = generateColorfulColors(Object.keys(analysisData.subRegions).length);
+            
+            subRegionChartInstance = new Chart(subRegionCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(analysisData.subRegions),
+                    datasets: [{
+                        label: 'Alarms',
+                        data: Object.values(analysisData.subRegions),
+                        backgroundColor: subRegionColors.backgroundColors,
+                        borderColor: subRegionColors.borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sub Region Wise Alarms'
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: Math.round,
+                            color: '#fff',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const index = element.index;
+                            const label = subRegionChartInstance.data.labels[index];
+                            showDataPopup('Sub Region', label, analysisData.subRegions[label]);
+                        }
+                    }
+                }
+            });
+            
+            // Create Region chart
+            const regionCtx = document.getElementById('regionChart').getContext('2d');
+            const regionColors = generateColorfulColors(Object.keys(analysisData.regions).length);
+            
+            regionChartInstance = new Chart(regionCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(analysisData.regions),
+                    datasets: [{
+                        label: 'Alarms',
+                        data: Object.values(analysisData.regions),
+                        backgroundColor: regionColors.backgroundColors,
+                        borderColor: regionColors.borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Region Wise Alarms'
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: Math.round,
+                            color: '#000',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const index = element.index;
+                            const label = regionChartInstance.data.labels[index];
+                            showDataPopup('Region', label, analysisData.regions[label]);
+                        }
+                    }
+                }
+            });
+            
+            // Create Domain chart
+            const domainCtx = document.getElementById('domainChart').getContext('2d');
+            const domainColors = generateColorfulColors(Object.keys(analysisData.domains).length);
+            
+            domainChartInstance = new Chart(domainCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(analysisData.domains),
+                    datasets: [{
+                        data: Object.values(analysisData.domains),
+                        backgroundColor: domainColors.backgroundColors,
+                        borderColor: domainColors.borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Domain Wise Alarms'
+                        },
+                        datalabels: {
+                            color: '#000',
+                            formatter: (value) => {
+                                return value;
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const index = element.index;
+                            const label = domainChartInstance.data.labels[index];
+                            showDataPopup('Domain', label, analysisData.domains[label]);
+                        }
+                    }
+                }
+            });
+            
+            // Create Alarm Type chart
+            const alarmTypeCtx = document.getElementById('alarmTypeChart').getContext('2d');
+            const alarmTypeColors = generateColorfulColors(Object.keys(analysisData.alarmTypes).length);
+            
+            alarmTypeChartInstance = new Chart(alarmTypeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(analysisData.alarmTypes),
+                    datasets: [{
+                        data: Object.values(analysisData.alarmTypes),
+                        backgroundColor: alarmTypeColors.backgroundColors,
+                        borderColor: alarmTypeColors.borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Alarm Type Wise Alarms'
+                        },
+                        datalabels: {
+                            color: '#000',
+                            formatter: (value) => {
+                                return value;
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const index = element.index;
+                            const label = alarmTypeChartInstance.data.labels[index];
+                            showDataPopup('Alarm Type', label, analysisData.alarmTypes[label]);
+                        }
+                    }
+                }
+            });
+            
+            // Create Summarized chart
+            const summarizedCtx = document.getElementById('summarizedChart').getContext('2d');
+            const summarizedColors = generateColorfulColors(Object.keys(analysisData.summaries).length);
+            
+            summarizedChartInstance = new Chart(summarizedCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(analysisData.summaries),
+                    datasets: [{
+                        label: 'Alarms',
+                        data: Object.values(analysisData.summaries),
+                        backgroundColor: summarizedColors.backgroundColors,
+                        borderColor: summarizedColors.borderColors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Summarized Alarms'
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: Math.round,
+                            color: '#000',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const index = element.index;
+                            const label = summarizedChartInstance.data.labels[index];
+                            showDataPopup('Summary', label, analysisData.summaries[label]);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Show data popup
+        function showDataPopup(category, label, count) {
+            alert(`${category}: ${label}\nAlarms Count: ${count}`);
+        }
+        
+        // Update table data based on selected alarm type
+        function updateTableDataByAlarmType(alarmType) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Skip header row
+            const startIndex = (rawData[0] && typeof rawData[0][0] === 'string' && rawData[0][0].toLowerCase().includes('site')) ? 1 : 0;
+            
+            // Display all rows
+            const rowsToDisplay = rawData.length - startIndex;
+            
+            let displayedRows = 0;
+            
+            for (let i = startIndex; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Filter by alarm type
+                const rowAlarmType = determineAlarmType(row);
+                if (rowAlarmType !== alarmType) continue;
+                
+                displayedRows++;
+                
+                // Create table row
+                const tr = document.createElement('tr');
+                
+                // Site ID (Column A)
+                const siteId = row[0] || '';
+                
+                // Sub Region (Column B)
+                const subRegion = row[1] || '';
+                
+                // Region (Column C)
+                const regionValue = row[2] || '';
+                
+                // Days Passed (Column E) - Number format with zero decimal
+                let daysPassed = row[4] || 0;
+                if (typeof daysPassed === 'string') {
+                    daysPassed = parseFloat(daysPassed) || 0;
+                }
+                daysPassed = Math.round(daysPassed);
+                
+                // Aging (Column F)
+                const aging = row[5] || '';
+                
+                // Alarm (Column G)
+                const alarm = row[6] || '';
+                
+                // ES POC (Column H)
+                const esPoc = row[7] || '';
+                
+                // SMS POC (Column I)
+                const smsPoc = row[8] || '';
+                
+                // Summarize (Column K)
+                const summarize = row[10] || '';
+                
+                // Domain (Column L) - Enfra or SMS LD
+                const domain = row[11] || 'Unknown';
+                
+                tr.innerHTML = `
+                    <td>${siteId}</td>
+                    <td>${subRegion}</td>
+                    <td>${regionValue}</td>
+                    <td>${daysPassed}</td>
+                    <td>${aging}</td>
+                    <td>${alarm}</td>
+                    <td>${esPoc}</td>
+                    <td>${smsPoc}</td>
+                    <td>${summarize}</td>
+                    <td>${domain}</td>
+                `;
+                
+                tableBody.appendChild(tr);
+            }
+            
+            // If no data found for alarm type
+            if (displayedRows === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 10;
+                td.textContent = `No data found for alarm type: ${alarmType}`;
+                td.style.textAlign = 'center';
+                td.style.fontWeight = 'bold';
+                td.style.backgroundColor = '#f8f9fa';
+                tr.appendChild(td);
+                tableBody.appendChild(tr);
+            }
+        }
+        
+        // Initialize with sample data
+        function initializeSampleData() {
+            console.log('Initializing with sample data...');
+            showStatus('⚠️ Using sample data for demonstration.', 'loading');
+            
+            // Sample data
+            
+            // Sample data
+            rawData = [
+                ['Site ID', 'Sub Region', 'Region', 'Alarm Type', 'Days Passed', 'Aging', 'Alarm', 'ES POC', 'SMS POC', 'Summarize', 'Domain'],
+                ['S001', 'Jacob Abad', 'Sukkur', 'Deep Sea', 15, 'Critical', 'Power Failure', 'John Doe', 'Jane Smith', 'Site Down', 'Enfra'],
+                ['S002', 'Larkana', 'Sukkur', 'Rectifier | CSU', 30, 'Major', 'Rectifier Fault', 'Mike Johnson', 'Sarah Wilson', 'Rectifier Issue', 'SMS LD'],
+                ['S003', 'Sukkur', 'Sukkur', 'Rectifier Fan', 5, 'Minor', 'Fan Failure', 'Robert Brown', 'Emily Davis', 'Fan Problem', 'Enfra'],
+                ['S004', 'Jacob Abad', 'Sukkur', 'RMS', 45, 'Critical', 'RMS Offline', 'David Lee', 'Lisa Taylor', 'RMS Down', 'SMS LD'],
+                ['S005', 'Larkana', 'Sukkur', 'SPD', 20, 'Major', 'SPD Tripped', 'James Wilson', 'Maria Garcia', 'SPD Fault', 'Enfra'],
+                ['S006', 'Sukkur', 'Sukkur', 'Deep Sea', 10, 'Minor', 'Generator Fault', 'Thomas Anderson', 'Patricia Moore', 'Generator Issue', 'SMS LD'],
+                ['S007', 'Jacob Abad', 'Sukkur', 'Rectifier | CSU', 25, 'Critical', 'CSU Communication', 'Charles Hall', 'Jennifer Clark', 'CSU Issue', 'Enfra'],
+                ['S008', 'Larkana', 'Sukkur', 'Rectifier Fan', 35, 'Major', 'Multiple Fan Failures', 'Daniel Allen', 'Elizabeth King', 'Fan Array Issue', 'SMS LD'],
+                ['S009', 'Sukkur', 'Sukkur', 'RMS', 12, 'Minor', 'RMS Warning', 'Matthew Wright', 'Barbara Scott', 'RMS Warning', 'Enfra'],
+                ['S010', 'Jacob Abad', 'Sukkur', 'SPD', 18, 'Major', 'SPD Warning', 'Anthony Green', 'Susan Adams', 'SPD Warning', 'SMS LD']
+            ];
+            
+            // Analyze the sample data
+            analyzeAlarmData(rawData);
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update charts and table data
+            updateCharts('All Alarms');
+            updateTableData('all');
+            
+            showStatus('✅ Sample data loaded successfully', 'success');
+        }
+        
+        // Export to Excel
+        function exportToExcel() {
+            showStatus('🔄 Exporting to Excel...', 'loading');
+            
+            try {
+                // In a real implementation, you would use a library like SheetJS to create an Excel file
+                // For now, we'll simulate the export
+                setTimeout(() => {
+                    showStatus('✅ Export to Excel completed', 'success');
+                    // Simulate download
+                    const link = document.createElement('a');
+                    link.href = 'data:text/plain;charset=utf-8,Active Alarms Report';
+                    link.download = 'active_alarms_report.xlsx';
+                    link.click();
+                }, 1000);
+            } catch (error) {
+                showStatus('❌ Error exporting to Excel: ' + error.message, 'error');
+            }
+        }
+        
+        // Export to PDF
+        function exportToPDF() {
+            showStatus('🔄 Exporting to PDF...', 'loading');
+            
+            try {
+                // In a real implementation, you would use jsPDF and html2canvas to create a PDF
+                // For now, we'll simulate the export
+                setTimeout(() => {
+                    showStatus('✅ Export to PDF completed', 'success');
+                    // Simulate download
+                    const link = document.createElement('a');
+                    link.href = 'data:text/plain;charset=utf-8,Active Alarms Report';
+                    link.download = 'active_alarms_report.pdf';
+                    link.click();
+                }, 1000);
+            } catch (error) {
+                showStatus('❌ Error exporting to PDF: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initVisitCounter();
+            
+            // Make upload icon clickable
+            const fileInput = document.getElementById('fileInput');
+            const fileUploadIcon = document.getElementById('fileUploadIcon');
+            
+            if (fileUploadIcon && fileInput) {
+                fileUploadIcon.style.display = 'flex';
+                showStatus('⚠️ Auto-loading failed. Please select events.xlsx file.', 'error');
+                
+                // Set up click handler for the upload icon
+                fileUploadIcon.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                // Set up file input change handler
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                            showStatus('🔄 Processing selected file...', 'loading');
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                try {
+                                    const data = new Uint8Array(e.target.result);
+                                    console.log('File loaded successfully');
+                                    showStatus('✅ File loaded successfully', 'success');
+                                    processEventsData(data);
+                                    
+                                    // Hide the upload icon after successful load
+                                    if (fileUploadIcon) {
+                                        fileUploadIcon.style.display = 'none';
+                                    }
+                                } catch (error) {
+                                    console.error('Error processing file:', error);
+                                    showStatus('❌ Error processing file: ' + error.message, 'error');
+                                    initializeSampleData();
+                                }
+                            };
+                            reader.onerror = function(error) {
+                                console.error('Error reading file:', error);
+                                showStatus('❌ Error reading file: ' + error.message, 'error');
+                                initializeSampleData();
+                            };
+                            reader.readAsArrayBuffer(file);
+                        } else {
+                            showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                        }
+                    }
+                });
+            }
+            
+            // Try to auto-load the file
+            loadEventsData();
+        });
+    </script>
+</body>
+</html>

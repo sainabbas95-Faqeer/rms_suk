@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug SPD Counts</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Debug SPD Counts</h1>
+    <button onclick="debugSPDCounts()">Debug SPD Counts</button>
+    <div id="output"></div>
+
+    <script>
+        function debugSPDCounts() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Loading SPD.xlsx...</p>';
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    output.innerHTML += '<p>File fetched successfully. Converting to array buffer...</p>';
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    output.innerHTML += '<p>Array buffer created. Size: ' + data.byteLength + ' bytes</p>';
+                    output.innerHTML += '<p>Parsing with XLSX library...</p>';
+                    
+                    try {
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        output.innerHTML += '<p>Workbook parsed successfully!</p>';
+                        output.innerHTML += '<p>Sheet names: ' + JSON.stringify(workbook.SheetNames) + '</p>';
+                        
+                        // Get first sheet
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        output.innerHTML += '<p>First sheet: ' + firstSheetName + '</p>';
+                        
+                        // Convert to JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        output.innerHTML += '<p>Data converted to JSON. Rows: ' + jsonData.length + '</p>';
+                        
+                        if (jsonData.length > 0) {
+                            output.innerHTML += '<p>First row: ' + JSON.stringify(jsonData[0]) + '</p>';
+                            
+                            // Analyze data
+                            let totalSPD = 0;
+                            let totalEnfra = 0;
+                            let totalSMSLD = 0;
+                            
+                            // Check if first row is header
+                            const startIndex = jsonData.length > 0 && typeof jsonData[0][0] === 'string' && jsonData[0][0].toLowerCase().includes('site') ? 1 : 0;
+                            output.innerHTML += '<p>Start index (skipping headers): ' + startIndex + '</p>';
+                            
+                            // Process all rows
+                            for (let i = startIndex; i < jsonData.length; i++) {
+                                const row = jsonData[i];
+                                
+                                // Show first few rows for debugging
+                                if (i < startIndex + 5) {
+                                    output.innerHTML += `<p>Row ${i}: Column G="${row[6] || ''}", Column L="${row[11] || ''}"</p>`;
+                                }
+                                
+                                // Column G is index 6 (7th column)
+                                const columnG = row[6] || '';
+                                
+                                // Column L is index 11 (12th column)
+                                const columnL = row[11] || '';
+                                
+                                // Count "SPD" in Column G
+                                if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                                    totalSPD++;
+                                }
+                                
+                                // Count "Enfra" in Column L
+                                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'ENFRA') {
+                                    totalEnfra++;
+                                }
+                                
+                                // Count "SMS LD" in Column L
+                                if (typeof columnL === 'string' && columnL.trim().toUpperCase() === 'SMS LD') {
+                                    totalSMSLD++;
+                                }
+                            }
+                            
+                            output.innerHTML += '<h2>Final Counts:</h2>';
+                            output.innerHTML += '<p style="font-size: 1.2em; font-weight: bold;">Total SPD alarms (Column G = "SPD"): ' + totalSPD + '</p>';
+                            output.innerHTML += '<p style="font-size: 1.2em; font-weight: bold;">Total Enfra alarms (Column L = "Enfra"): ' + totalEnfra + '</p>';
+                            output.innerHTML += '<p style="font-size: 1.2em; font-weight: bold;">Total SMS LD alarms (Column L = "SMS LD"): ' + totalSMSLD + '</p>';
+                        }
+                    } catch (e) {
+                        output.innerHTML += '<p style="color: red;">Error parsing workbook: ' + e.message + '</p>';
+                        console.error(e);
+                    }
+                })
+                .catch(error => {
+                    output.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+</html>

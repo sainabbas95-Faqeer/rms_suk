@@ -1,0 +1,264 @@
+================================================================================
+                    STATISTICS CARDS - UPDATED LABELS
+================================================================================
+
+CHANGES COMPLETED:
+==================
+
+✅ Card 1: Changed "Enfra" → "Total Offline on Enfra Domain"
+✅ Card 2: Changed "SMS LD" → "Total Offline on SMS LD Domain"
+✅ Card 3: Changed "Others" → "Total RMS Offline" (Shows Enfra + SMS LD)
+✅ Card 4: Kept "Total Records" (Shows all records)
+✅ Removed all emoji icons from labels
+✅ Added calculation for Total RMS Offline
+
+STATISTICS CARDS LAYOUT:
+========================
+
+┌─────────────────────┬─────────────────────┬─────────────────────┬─────────────────────┐
+│         26          │         23          │         49          │         100         │
+│                     │                     │                     │                     │
+│  Total Offline on   │  Total Offline on   │   Total RMS Offline │   Total Records     │
+│   Enfra Domain      │  SMS LD Domain      │                     │                     │
+└─────────────────────┴─────────────────────┴─────────────────────┴─────────────────────┘
+
+CARD DETAILS:
+=============
+
+Card 1: ENFRA DOMAIN
+--------------------
+- Number: Count of Enfra entries (e.g., 26)
+- Label: "Total Offline on"
+         "Enfra Domain"
+- Purpose: Shows offline count for Enfra domain
+- Color: Gradient purple-blue background
+
+Card 2: SMS LD DOMAIN
+---------------------
+- Number: Count of SMS LD entries (e.g., 23)
+- Label: "Total Offline on"
+         "SMS LD Domain"
+- Purpose: Shows offline count for SMS LD domain
+- Color: Gradient purple-blue background
+
+Card 3: TOTAL RMS OFFLINE
+--------------------------
+- Number: Enfra + SMS LD (e.g., 26 + 23 = 49)
+- Label: "Total RMS Offline"
+- Purpose: Combined offline count for both domains
+- Calculation: analysisData.enfra + analysisData.smsLd
+- Color: Gradient purple-blue background
+
+Card 4: TOTAL RECORDS
+---------------------
+- Number: All records in database (e.g., 100)
+- Label: "Total Records"
+- Purpose: Shows total number of records analyzed
+- Includes: Enfra + SMS LD + Others + Empty
+- Color: Gradient purple-blue background
+
+CALCULATION LOGIC:
+==================
+
+JavaScript Implementation:
+--------------------------
+const totalRmsOffline = analysisData.enfra + analysisData.smsLd;
+
+Card Values:
+- Card 1: analysisData.enfra
+- Card 2: analysisData.smsLd
+- Card 3: totalRmsOffline (Enfra + SMS LD)
+- Card 4: analysisData.total
+
+Example with Sample Data:
+--------------------------
+Enfra count: 26
+SMS LD count: 23
+Others count: 5
+Empty cells: 46
+
+Results:
+- Card 1: 26 (Enfra only)
+- Card 2: 23 (SMS LD only)
+- Card 3: 49 (26 + 23)
+- Card 4: 100 (Total records including all categories)
+
+LABEL FORMATTING:
+=================
+
+Multi-line Labels:
+- Card 1 & 2 use <br> tag for line break
+- Format: "Total Offline on<br>Domain Name"
+- Creates two-line display for better readability
+
+Single-line Labels:
+- Card 3 & 4 use single line
+- Format: "Total RMS Offline" / "Total Records"
+- Simpler labels don't need line breaks
+
+VISUAL COMPARISON:
+==================
+
+BEFORE:
+-------
+┌──────────┬──────────┬──────────┬──────────┐
+│    26    │    23    │     5    │   100    │
+│ 🏢 Enfra │📱SMS LD  │📋 Others │📊 Total  │
+│          │          │          │  Records │
+└──────────┴──────────┴──────────┴──────────┘
+
+AFTER:
+------
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│      26      │      23      │      49      │     100      │
+│Total Offline │Total Offline │Total RMS     │Total Records │
+│on Enfra      │on SMS LD     │Offline       │              │
+│Domain        │Domain        │              │              │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+
+BUSINESS LOGIC:
+===============
+
+"Total Offline" Interpretation:
+- Refers to offline RMS (Remote Monitoring System) devices
+- Enfra Domain: Devices managed by Enfra that are offline
+- SMS LD Domain: Devices managed by SMS LD that are offline
+- Total RMS Offline: Combined count of all offline devices
+
+Card 3 Purpose:
+- Quick view of total offline count across both domains
+- Sum of Enfra and SMS LD offline devices
+- Excludes "Others" category
+- Focuses on the two primary domains
+
+Card 4 Purpose:
+- Shows complete dataset size
+- Includes all categories (Enfra, SMS LD, Others, Empty)
+- Used for percentage calculations
+- Represents total records in Excel file
+
+STYLING DETAILS:
+================
+
+Card Appearance:
+- Background: White
+- Number Font Size: 3em (large)
+- Number Color: Purple gradient (#667eea)
+- Label Font Size: 1.1em
+- Label Color: Gray (#666)
+- Shadow: Elevated 3D effect
+- Hover Effect: Slight lift and enhanced shadow
+
+Grid Layout:
+- Display: Grid
+- Columns: 4 equal columns (auto-fit, minimum 250px)
+- Gap: 20px between cards
+- Responsive: Adapts to screen size
+
+TEXT ALIGNMENT:
+===============
+
+All Cards:
+- Text Align: Center
+- Number: Centered and bold
+- Label: Centered below number
+- Line Height: Optimized for readability
+
+RESPONSIVE BEHAVIOR:
+====================
+
+Desktop (Wide Screen):
+┌─────┬─────┬─────┬─────┐
+│  1  │  2  │  3  │  4  │
+└─────┴─────┴─────┴─────┘
+
+Tablet (Medium Screen):
+┌─────┬─────┐
+│  1  │  2  │
+├─────┼─────┤
+│  3  │  4  │
+└─────┴─────┘
+
+Mobile (Narrow Screen):
+┌─────┐
+│  1  │
+├─────┤
+│  2  │
+├─────┤
+│  3  │
+├─────┤
+│  4  │
+└─────┘
+
+BENEFITS:
+=========
+
+✓ Clear Domain Identification
+✓ Explicit "Offline" Terminology
+✓ Combined Total for Quick Overview
+✓ Professional Business Language
+✓ No Distracting Emojis
+✓ Two-line Format for Clarity
+✓ Accurate Calculation Display
+✓ Focuses on Key Metrics
+
+TECHNICAL IMPLEMENTATION:
+=========================
+
+HTML Structure (Generated by JavaScript):
+------------------------------------------
+<div class="stat-card">
+    <div class="stat-number">26</div>
+    <div class="stat-label">Total Offline on<br>Enfra Domain</div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-number">23</div>
+    <div class="stat-label">Total Offline on<br>SMS LD Domain</div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-number">49</div>
+    <div class="stat-label">Total RMS Offline</div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-number">100</div>
+    <div class="stat-label">Total Records</div>
+</div>
+
+JavaScript Calculation:
+-----------------------
+const totalRmsOffline = analysisData.enfra + analysisData.smsLd;
+
+USAGE SCENARIOS:
+================
+
+Management Dashboard:
+- Quick view of offline devices per domain
+- Combined total for overall system health
+- Total records for data completeness check
+
+Operational Monitoring:
+- Track Enfra domain offline count
+- Track SMS LD domain offline count
+- Monitor total offline devices
+- Validate data collection
+
+Reporting:
+- Professional labels for presentations
+- Clear terminology for stakeholders
+- Accurate calculations for analysis
+- Complete data overview
+
+================================================================================
+                        STATISTICS CARDS UPDATED!
+================================================================================
+
+The dashboard now displays:
+1. Total Offline on Enfra Domain: [Count]
+2. Total Offline on SMS LD Domain: [Count]
+3. Total RMS Offline: [Enfra + SMS LD]
+4. Total Records: [All records]
+
+Professional, clear, and accurate metrics for RMS monitoring!

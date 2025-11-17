@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sub-Region Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .map-container {
+            flex: 2;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .site-list {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            padding: 25px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .site-list-header {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .sites-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .sites-table th,
+        .sites-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .sites-table th {
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        .sites-table tr:hover {
+            background: #f1f8ff;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="regionName">Region Map</h1>
+        </div>
+        
+        <div id="statusMessage"></div>
+        
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <div class="site-list">
+                <h2 class="site-list-header">Sites in <span id="siteListRegion">Region</span></h2>
+                <table class="sites-table" id="sitesTable">
+                    <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Location Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sitesTableBody">
+                        <!-- Sites will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Sub-Region Map &copy; 2025 Abbas Enterprises</p>
+        </div>
+    </div>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- SheetJS -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global variable for the map
+        let map;
+        let markers = [];
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusContainer = document.getElementById('statusMessage');
+            if (statusContainer) {
+                statusContainer.innerHTML = `<div class="status status-${type}">${message}</div>`;
+                
+                // Auto-hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusContainer.innerHTML = '';
+                    }, 5000);
+                }
+            } else {
+                console.warn('Status message container not found');
+            }
+        }
+
+        // Get region from URL parameter
+        function getRegionFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('region') || 'Unknown Region';
+        }
+
+        // Initialize the map
+        function initMap() {
+            console.log('Initializing map...');
+            
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                console.error('Leaflet library not loaded');
+                showStatus('❌ Map library not loaded. Please check your internet connection.', 'error');
+                return null;
+            }
+            
+            // Check if map container exists
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+                console.error('Map container not found');
+                showStatus('❌ Map container not found in DOM', 'error');
+                return null;
+            }
+            
+            console.log('Map container found, size:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+            
+            // Ensure the container has dimensions
+            if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
+                console.warn('Map container has zero dimensions, setting default size');
+                mapContainer.style.height = '500px';
+            }
+            
+            // Clear any existing content
+            mapContainer.innerHTML = '';
+            
+            // Create map centered on Pakistan (approximate center)
+            try {
+                const mapInstance = L.map('map').setView([27.7052, 68.8584], 10);
+                
+                // Add OpenStreetMap tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 18
+                }).addTo(mapInstance);
+                
+                console.log('Map initialized successfully');
+                
+                // Add a test marker to verify the map is working
+                try {
+                    const testMarker = L.marker([27.7052, 68.8584]).addTo(mapInstance)
+                        .bindPopup('Test Marker - Map is working!')
+                        .openPopup();
+                    console.log('Test marker added successfully');
+                } catch (markerError) {
+                    console.error('Error adding test marker:', markerError);
+                }
+                
+                return mapInstance;
+            } catch (mapError) {
+                console.error('Error initializing map:', mapError);
+                showStatus(`❌ Error initializing map: ${mapError.message}`, 'error');
+                
+                // Show error message in map container
+                mapContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; border-radius: 10px; padding: 20px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #dc3545; margin-bottom: 20px;"></i>
+                        <p style="font-size: 18px; color: #dc3545; text-align: center; max-width: 600px;">
+                            Error initializing map: ${mapError.message}
+                        </p>
+                        <p style="font-size: 16px; color: #666; text-align: center; max-width: 600px; margin-top: 10px;">
+                            Please check your internet connection and try again.
+                        </p>
+                    </div>
+                `;
+                
+                return null;
+            }
+        }
+
+        // Add markers to the map
+        function addMarkersToMap(sites, mapInstance) {
+            console.log('Adding markers to map, sites:', sites.length);
+            
+            try {
+                // Check if map instance is valid
+                if (!mapInstance) {
+                    console.error('Map instance is not valid');
+                    showStatus('❌ Map instance is not valid', 'error');
+                    return;
+                }
+                
+                // Clear existing markers
+                if (typeof markers !== 'undefined' && markers.length > 0) {
+                    try {
+                        markers.forEach(marker => {
+                            if (mapInstance.hasLayer(marker)) {
+                                mapInstance.removeLayer(marker);
+                            }
+                        });
+                    } catch (clearError) {
+                        console.warn('Error clearing markers:', clearError);
+                    }
+                }
+                markers = [];
+                
+                // If no sites, just return
+                if (!sites || sites.length === 0) {
+                    console.log('No sites to display on map');
+                    showStatus('ℹ️ No sites to display on map', 'loading');
+                    return;
+                }
+                
+                // Add new markers
+                let validMarkers = [];
+                let invalidLocations = 0;
+                
+                sites.forEach((site, index) => {
+                    try {
+                        console.log('Processing site:', index, site.siteName, site.locationData);
+                        
+                        // Parse location data (now in "lat,lng" format after processing)
+                        let lat, lng;
+                        
+                        if (site.locationData) {
+                            // Try to parse as "lat,lng" format
+                            const coords = site.locationData.split(',');
+                            if (coords.length === 2) {
+                                lat = parseFloat(coords[0].trim());
+                                lng = parseFloat(coords[1].trim());
+                                console.log('Parsed coordinates:', lat, lng);
+                                
+                                // Validate coordinates
+                                if (isNaN(lat) || isNaN(lng)) {
+                                    console.warn('Invalid numeric values for coordinates:', coords);
+                                    invalidLocations++;
+                                    return;
+                                }
+                                
+                                // Basic coordinate validation (rough bounds for Pakistan)
+                                if (lat < 20 || lat > 38 || lng < 60 || lng > 80) {
+                                    console.warn('Coordinates out of expected range for Pakistan:', lat, lng);
+                                    invalidLocations++;
+                                    return;
+                                }
+                            } else {
+                                console.warn('Invalid coordinate format for site:', site.siteName, site.locationData);
+                                invalidLocations++;
+                                return;
+                            }
+                        } else {
+                            console.warn('No location data for site:', site.siteName);
+                            invalidLocations++;
+                            return;
+                        }
+                        
+                        // If we have valid coordinates, add marker
+                        if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                            try {
+                                console.log('Creating marker for:', site.siteName, [lat, lng]);
+                                const marker = L.marker([lat, lng]).addTo(mapInstance)
+                                    .bindPopup(`<b>${site.siteName}</b><br>Location: ${lat}, ${lng}`);
+                                markers.push(marker);
+                                validMarkers.push(marker);
+                            } catch (markerError) {
+                                console.error('Error creating marker for site:', site.siteName, markerError);
+                            }
+                        } else {
+                            invalidLocations++;
+                        }
+                    } catch (siteError) {
+                        console.error('Error processing site:', index, site, siteError);
+                        invalidLocations++;
+                    }
+                });
+                
+                console.log('Valid markers created:', validMarkers.length, 'Invalid locations:', invalidLocations);
+                
+                // Show status message
+                if (validMarkers.length > 0) {
+                    showStatus(`✅ Displaying ${validMarkers.length} sites on map`, 'success');
+                } else if (invalidLocations > 0) {
+                    showStatus(`⚠️ Found ${sites.length} sites but ${invalidLocations} had invalid location data`, 'loading');
+                } else {
+                    showStatus('ℹ️ No valid sites to display on map', 'loading');
+                }
+                
+                // Fit map to bounds if we have markers
+                if (validMarkers.length > 0) {
+                    try {
+                        const group = new L.featureGroup(validMarkers);
+                        const bounds = group.getBounds();
+                        if (bounds.isValid()) {
+                            mapInstance.fitBounds(bounds.pad(0.1));
+                            console.log('Map bounds adjusted');
+                        } else {
+                            console.warn('Invalid bounds, using default view');
+                            mapInstance.setView([27.7052, 68.8584], 10);
+                        }
+                    } catch (boundsError) {
+                        console.error('Error fitting map to bounds:', boundsError);
+                        // Fallback to default view
+                        mapInstance.setView([27.7052, 68.8584], 10);
+                    }
+                }
+            } catch (markerError) {
+                console.error('Error in addMarkersToMap:', markerError);
+                showStatus(`❌ Error adding markers to map: ${markerError.message}`, 'error');
+            }
+        }
+
+        // Process location data for the specific sub-region
+        function processSubRegionData(data, subRegionName) {
+            console.log('=== PROCESS SUB-REGION DATA START ===');
+            console.log('Data rows received:', data ? data.length : 'No data');
+            console.log('Requested sub-region:', subRegionName);
+            
+            try {
+                showStatus('🔍 Processing sub-region data...', 'loading');
+                
+                // Validate data
+                if (!data) {
+                    console.warn('No data provided to processSubRegionData');
+                    throw new Error('No data provided');
+                }
+                
+                if (!Array.isArray(data)) {
+                    console.warn('Data is not an array:', typeof data, data);
+                    throw new Error('Data is not in expected array format');
+                }
+                
+                if (data.length === 0) {
+                    console.warn('Data array is empty');
+                    throw new Error('Data array is empty');
+                }
+                
+                console.log('Data validation passed');
+                console.log('Header row (first row):', data[0]);
+                
+                // Check what sub-regions are available in the data
+                const availableSubRegions = new Set();
+                const sites = [];
+                
+                console.log('Processing', data.length - 1, 'data rows (excluding header)');
+                
+                // Process all rows to collect sub-regions and matching sites
+                let rowsProcessed = 0;
+                let rowsWithLocationData = 0;
+                let rowsMatchingSubRegion = 0;
+                
+                for (let i = 1; i < data.length; i++) {
+                    try {
+                        const row = data[i];
+                        rowsProcessed++;
+                        
+                        if (rowsProcessed <= 5) {
+                            console.log('Row', i, 'data:', row);
+                        } else if (rowsProcessed === 6) {
+                            console.log('... (showing first 5 rows only)');
+                        }
+                        
+                        // Check if row has enough columns
+                        if (!row) {
+                            if (rowsProcessed <= 5) console.log('Row', i, 'is null or undefined');
+                            continue;
+                        }
+                        
+                        if (!Array.isArray(row)) {
+                            if (rowsProcessed <= 5) console.log('Row', i, 'is not an array:', typeof row, row);
+                            continue;
+                        }
+                        
+                        if (row.length < 4) {
+                            if (rowsProcessed <= 5) console.log('Row', i, 'does not have enough columns:', row.length, 'columns');
+                            continue;
+                        }
+                        
+                        const siteName = row[0] || '';  // Column A: ENF Site ID
+                        const subRegion = row[1] || ''; // Column B: Sub Region
+                        // Column C: Region (not used)
+                        const latLngData = row[3] || ''; // Column D: Latitude (contains lat lng)
+                        
+                        if (rowsProcessed <= 5) {
+                            console.log('Row', i, 'parsed - Site:', siteName, '| SubRegion:', subRegion, '| LatLng:', latLngData);
+                        }
+                        
+                        // Skip rows with missing required data
+                        if (!siteName || !subRegion) {
+                            if (rowsProcessed <= 5) console.log('Row', i, 'skipped - missing required data');
+                            continue;
+                        }
+                        
+                        // Skip rows with empty location data
+                        if (!latLngData || latLngData.trim() === '') {
+                            if (rowsProcessed <= 5) console.log('Row', i, 'skipped - missing location data');
+                            continue;
+                        }
+                        
+                        rowsWithLocationData++;
+                        
+                        // Add sub-region to available list
+                        availableSubRegions.add(subRegion.trim());
+                        
+                        // Check if this site belongs to the selected sub-region
+                        if (subRegion.trim() === subRegionName) {
+                            rowsMatchingSubRegion++;
+                            
+                            // Handle different location data formats
+                            let formattedLocationData = '';
+                            
+                            // If latLngData contains two numbers separated by spaces, format as "lat,lng"
+                            if (latLngData && typeof latLngData === 'string') {
+                                // Remove special characters and extra spaces
+                                const cleanData = latLngData.replace(/[°\s]+/g, ' ').trim();
+                                const coords = cleanData.split(' ');
+                                if (coords.length >= 2) {
+                                    // Take the first two values as lat and lng
+                                    const lat = coords[0].trim();
+                                    const lng = coords[1].trim();
+                                    formattedLocationData = `${lat},${lng}`;
+                                    if (rowsProcessed <= 5) console.log('Row', i, 'formatted location:', formattedLocationData);
+                                } else {
+                                    formattedLocationData = cleanData;
+                                    if (rowsProcessed <= 5) console.log('Row', i, 'using clean data as location:', formattedLocationData);
+                                }
+                            }
+                            
+                            sites.push({
+                                siteName: siteName.trim(),
+                                locationData: formattedLocationData
+                            });
+                            
+                            if (rowsProcessed <= 5) {
+                                console.log('Row', i, 'added to sites list:', siteName.trim());
+                            }
+                        } else if (rowsProcessed <= 5) {
+                            console.log('Row', i, 'sub-region does not match:', subRegion.trim(), '!==', subRegionName);
+                        }
+                    } catch (rowError) {
+                        console.warn('Error processing row:', i, rowError);
+                        continue;
+                    }
+                }
+                
+                console.log('=== PROCESSING SUMMARY ===');
+                console.log('Total rows processed:', rowsProcessed);
+                console.log('Rows with location data:', rowsWithLocationData);
+                console.log('Rows matching sub-region:', rowsMatchingSubRegion);
+                console.log('Unique sub-regions found:', availableSubRegions.size);
+                console.log('Available sub-regions:', Array.from(availableSubRegions).sort());
+                console.log('Sites found for', subRegionName, ':', sites.length);
+                
+                // If no sites found for this sub-region, show a message
+                if (sites.length === 0) {
+                    const availableList = Array.from(availableSubRegions).sort().join(', ');
+                    console.log('No sites found for requested sub-region. Available sub-regions:', availableList);
+                    showStatus(`ℹ️ No sites found for "${subRegionName}". Available sub-regions: ${availableList}`, 'loading');
+                } else {
+                    showStatus(`✅ Successfully loaded ${sites.length} sites for ${subRegionName}`, 'success');
+                }
+                
+                // Display the data
+                console.log('Displaying', sites.length, 'sites for', subRegionName);
+                displaySubRegionData(sites, subRegionName);
+                
+            } catch (error) {
+                console.error('=== ERROR IN PROCESS SUB-REGION DATA ===');
+                console.error('Error:', error);
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Stack trace:', error.stack);
+                showStatus(`❌ Error processing data: ${error.message}`, 'error');
+                
+                // Display empty data to show at least the map
+                displaySubRegionData([], subRegionName);
+            }
+        }
+
+        // Display sub-region data on map and table
+        function displaySubRegionData(sites, subRegionName) {
+            console.log('Displaying sub-region data for:', subRegionName, 'Sites:', sites.length);
+            
+            try {
+                // Update page titles
+                const regionNameElement = document.getElementById('regionName');
+                const siteListRegionElement = document.getElementById('siteListRegion');
+                
+                if (regionNameElement) {
+                    regionNameElement.textContent = subRegionName + ' Map';
+                }
+                
+                if (siteListRegionElement) {
+                    siteListRegionElement.textContent = subRegionName;
+                }
+                
+                // Display sites in table
+                const tableBody = document.getElementById('sitesTableBody');
+                if (tableBody) {
+                    tableBody.innerHTML = '';
+                    
+                    if (sites.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="2">
+                                    <div style="text-align: center; padding: 20px;">
+                                        <p>No sites found for "${subRegionName}"</p>
+                                        <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                                            This could be because:
+                                        </p>
+                                        <ul style="text-align: left; font-size: 14px; color: #666; margin-top: 5px;">
+                                            <li>The sub-region name doesn't match any entries in the data</li>
+                                            <li>The Locations.xlsx file doesn't contain this sub-region</li>
+                                            <li>There might be a mismatch in naming (check for extra spaces)</li>
+                                        </ul>
+                                        <button onclick="loadDemoData()" style="margin-top: 15px; padding: 8px 16px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                            Load Demo Data
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        sites.forEach(site => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${site.siteName}</td>
+                                <td>${site.locationData || 'N/A'}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    }
+                } else {
+                    console.error('Table body element not found');
+                }
+                
+                // Add markers to map
+                console.log('Adding markers to map, map exists:', typeof map !== 'undefined' && map);
+                if (typeof map !== 'undefined' && map) {
+                    addMarkersToMap(sites, map);
+                } else {
+                    console.warn('Map not available, initializing map now');
+                    // Try to initialize map now
+                    map = initMap();
+                    if (map) {
+                        addMarkersToMap(sites, map);
+                    }
+                }
+            } catch (displayError) {
+                console.error('Error displaying data:', displayError);
+                showStatus(`❌ Error displaying data: ${displayError.message}`, 'error');
+                
+                // Ensure at least the map is shown
+                if (!map) {
+                    map = initMap();
+                }
+            }
+        }
+
+        // Load demo data for testing
+        function loadDemoData() {
+            console.log('Loading demo data');
+            showStatus('🔄 Loading demo data...', 'loading');
+            
+            // Initialize map if not already done
+            if (!map) {
+                map = initMap();
+            }
+            
+            // Demo data for testing - matching the new format
+            const demoSites = [
+                { siteName: 'Demo Site 1', locationData: '27.7052,68.8584' },
+                { siteName: 'Demo Site 2', locationData: '27.7152,68.8684' },
+                { siteName: 'Demo Site 3', locationData: '27.7252,68.8784' },
+                { siteName: 'Demo Site 4', locationData: '27.7352,68.8884' }
+            ];
+            
+            // Display demo data
+            displaySubRegionData(demoSites, 'Demo Region');
+        }
+
+        // Load data from Locations.xlsx
+        function loadSubRegionData(subRegionName) {
+            console.log('=== LOAD SUB-REGION DATA START ===');
+            console.log('Requested sub-region:', subRegionName);
+            
+            // Check if required libraries are loaded
+            if (typeof XLSX === 'undefined') {
+                console.error('XLSX library not loaded');
+                showStatus('❌ Excel library not loaded. Please check your internet connection.', 'error');
+                
+                // Show basic map without data
+                loadDemoData();
+                return;
+            }
+            
+            showStatus('🔄 Loading location data...', 'loading');
+            
+            // Try to fetch the Locations.xlsx file
+            fetch('XLSX Files/Locations.xlsx')
+                .then(response => {
+                    console.log('Fetch response received:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    console.log('Fetch successful, getting array buffer...');
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    console.log('Array buffer received, size:', data.byteLength);
+                    console.log('Processing Excel file...');
+                    // Process the Excel file
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    console.log('Workbook loaded, sheet names:', workbook.SheetNames);
+                    const firstSheetName = workbook.SheetNames[0];
+                    console.log('First sheet name:', firstSheetName);
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    console.log('Worksheet keys:', Object.keys(worksheet));
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('JSON data converted, rows:', jsonData.length);
+                    console.log('First few rows:', jsonData.slice(0, 3));
+                    
+                    processSubRegionData(jsonData, subRegionName);
+                })
+                .catch(error => {
+                    console.error('=== ERROR LOADING LOCATIONS.XLSX ===');
+                    console.error('Error details:', error);
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+                    console.error('Stack trace:', error.stack);
+                    showStatus(`❌ Error loading map data: ${error.message}`, 'error');
+                    
+                    // Provide detailed error information
+                    const mapContainer = document.getElementById('map');
+                    if (mapContainer) {
+                        mapContainer.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; border-radius: 10px; padding: 20px;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #dc3545; margin-bottom: 20px;"></i>
+                                <p style="font-size: 18px; color: #dc3545; text-align: center; max-width: 600px;">
+                                    Error loading map data: ${error.message}
+                                </p>
+                                <p style="font-size: 16px; color: #666; text-align: center; max-width: 600px; margin-top: 10px;">
+                                    Debug Information:
+                                </p>
+                                <ul style="text-align: left; color: #666; max-width: 600px;">
+                                    <li>Requested sub-region: ${subRegionName}</li>
+                                    <li>Error type: ${error.name}</li>
+                                    <li>File path: XLSX Files/Locations.xlsx</li>
+                                </ul>
+                                <p style="font-size: 14px; color: #888; text-align: center; max-width: 600px; margin-top: 10px;">
+                                    Check browser console for detailed error information (Press F12)
+                                </p>
+                                <button onclick="loadDemoData()" style="margin-top: 20px; padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    Load Demo Data
+                                </button>
+                                <button onclick="retryLoadData('${subRegionName}')" style="margin-top: 10px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                    Retry Loading
+                                </button>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Retry loading data
+        function retryLoadData(subRegionName) {
+            console.log('Retrying to load data for:', subRegionName);
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.innerHTML = '';
+            }
+            loadSubRegionData(subRegionName);
+        }
+
+        // Set up the page with region data
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== GET REGION FROM URL ===');
+            console.log('Full URL:', window.location.href);
+            console.log('URL search params:', window.location.search);
+            const urlParams = new URLSearchParams(window.location.search);
+            console.log('All URL params:', Array.from(urlParams.entries()));
+            console.log('Region parameter value:', urlParams.get('region'));
+            
+            console.log('DOM content loaded, initializing page...');
+            
+            // Show initial loading message
+            showStatus('🔄 Initializing map page...', 'loading');
+            
+            // Add a small delay to ensure all resources are loaded
+            setTimeout(() => {
+                try {
+                    const subRegionName = getRegionFromURL();
+                    console.log('Map page loaded for sub-region:', subRegionName);
+                    
+                    // Show what we're looking for
+                    showStatus(`🔍 Looking for data for sub-region: ${subRegionName}`, 'loading');
+                    
+                    // Initialize map first
+                    console.log('Initializing map...');
+                    map = initMap();
+                    console.log('Map initialization result:', map);
+                    
+                    // Load data for this sub-region
+                    console.log('Loading sub-region data...');
+                    loadSubRegionData(subRegionName);
+                } catch (initError) {
+                    console.error('Error during page initialization:', initError);
+                    showStatus(`❌ Page initialization error: ${initError.message}`, 'error');
+                    
+                    // Fallback initialization
+                    setTimeout(() => {
+                        try {
+                            const subRegionName = getRegionFromURL();
+                            console.log('Fallback initialization for:', subRegionName);
+                            if (!map) {
+                                map = initMap();
+                            }
+                            loadSubRegionData(subRegionName);
+                        } catch (fallbackError) {
+                            console.error('Fallback initialization failed:', fallbackError);
+                            showStatus(`❌ Fallback initialization failed: ${fallbackError.message}`, 'error');
+                        }
+                    }, 1000);
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

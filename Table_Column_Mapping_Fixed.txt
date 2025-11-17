@@ -1,0 +1,82 @@
+================================================================================
+TABLE VIEW COLUMN MAPPING - CORRECTED
+================================================================================
+
+Date Fixed: 2025-10-12
+File: table_view.html
+
+COLUMN MAPPING CORRECTIONS:
+================================================================================
+
+Table Header          Excel Column    Index    Previous    Corrected
+--------------------------------------------------------------------------------
+Site Id               Column A        0        ✓ Correct   ✓ Correct
+Sub Region            Column C        2        ✓ Correct   ✓ Correct  
+Cluster               Column D        3        ✓ Correct   ✓ Correct
+Team Lead             Column E        4        ✗ Was F(5)  ✓ Fixed to E(4)
+ES POC                Column F        5        ✗ Was G(6)  ✓ Fixed to F(5)
+Offline Date          Column G        6        ✗ Was H(7)  ✓ Fixed to G(6)
+Days Passed           Column H        7        ✗ Was I(8)  ✓ Fixed to H(7)
+Reason                Column J        9        ✗ Was K(10) ✓ Fixed to J(9)
+
+ADDITIONAL ENHANCEMENTS:
+================================================================================
+
+1. OFFLINE DATE FORMATTING:
+   - Format: DD-MMM-YY (e.g., 15-Jan-25)
+   - Handles Excel serial date numbers
+   - Handles string dates
+   - Fallback to original value if conversion fails
+
+2. DAYS PASSED FORMATTING:
+   - Rounded to zero decimal places (integer)
+   - Example: 45.7 → 46, 30.2 → 30
+   - Invalid values are preserved as-is
+
+3. IMPROVED ERROR HANDLING:
+   - Better date parsing for Excel formats
+   - Graceful fallback for invalid data
+   - Console logging for debugging
+
+EXCEL COLUMN REFERENCE:
+================================================================================
+A  B  C          D        E          F       G             H            I  J       K  L
+|  |  |          |        |          |       |             |            |  |       |  |
+|  |  |          |        |          |       |             |            |  |       |  Domain
+|  |  |          |        |          |       |             |            |  Reason |
+|  |  |          |        |          |       |             Days Passed |        |
+|  |  |          |        |          |       Offline Date            |        |
+|  |  |          |        |          ES POC                          |        |
+|  |  |          |        Team Lead                                  |        |
+|  |  |          Cluster                                             |        |
+|  |  Sub Region                                                     |        |
+|  (Column B - not used in table)                                    |        |
+Site Id                                                               |        |
+
+TESTING INSTRUCTIONS:
+================================================================================
+
+1. Open column_l_3d_chart.html
+2. Upload DB.xlsx file
+3. Click on any chart to open table view
+4. Verify all columns show correct data:
+   ✓ Site Id from Column A
+   ✓ Sub Region from Column C
+   ✓ Cluster from Column D
+   ✓ Team Lead from Column E
+   ✓ ES POC from Column F
+   ✓ Offline Date from Column G (formatted as DD-MMM-YY)
+   ✓ Days Passed from Column H (rounded integer)
+   ✓ Reason from Column J
+
+5. Check date formatting (should be like: 15-Jan-25, 01-Feb-25, etc.)
+6. Check days passed (should be integers: 45, 30, 120, etc.)
+
+NOTES:
+================================================================================
+- All column references are 0-based in code (Column A = index 0)
+- The table view file now correctly maps to the Excel structure
+- Date and number formatting is applied automatically
+- All previous filtering functionality remains intact
+
+================================================================================

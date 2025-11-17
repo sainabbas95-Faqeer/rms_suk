@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detailed SPD Debug</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Detailed SPD Data Analysis</h1>
+    <button onclick="analyzeSPDData()">Analyze SPD Data</button>
+    <button onclick="testLocalStorage()">Test LocalStorage Transfer</button>
+    <button onclick="clearDebug()">Clear Debug Info</button>
+    
+    <div id="debugOutput"></div>
+
+    <script>
+        function addDebug(message, isError = false) {
+            const debugOutput = document.getElementById('debugOutput');
+            const div = document.createElement('div');
+            div.className = 'section ' + (isError ? 'error' : 'success');
+            div.innerHTML = message;
+            debugOutput.appendChild(div);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+        
+        function clearDebug() {
+            document.getElementById('debugOutput').innerHTML = '';
+        }
+        
+        function analyzeSPDData() {
+            addDebug('<h2>Loading and Analyzing SPD.xlsx</h2>');
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('<strong>File loaded successfully</strong>');
+                    addDebug('Total rows: ' + jsonData.length);
+                    
+                    // Detect header row
+                    let startIndex = 0;
+                    if (jsonData.length > 0) {
+                        const firstRow = jsonData[0];
+                        const firstCell = firstRow[0] || '';
+                        if (typeof firstCell === 'string' && firstCell.toLowerCase().includes('site')) {
+                            startIndex = 1;
+                            addDebug('Header row detected at index 0');
+                        } else {
+                            addDebug('No header row detected');
+                        }
+                    }
+                    
+                    addDebug('Start index for data: ' + startIndex);
+                    
+                    // Show first 5 rows with all columns
+                    addDebug('<h3>First 5 rows:</h3><pre>' + JSON.stringify(jsonData.slice(0, 5), null, 2) + '</pre>');
+                    
+                    // Analyze specific columns
+                    addDebug('<h3>Column Analysis:</h3>');
+                    let spdCount = 0;
+                    let enfraCount = 0;
+                    let smsldCount = 0;
+                    let resolvedCount = 0;
+                    let otherCount = 0;
+                    
+                    const endIndex = Math.min(jsonData.length, startIndex + 50); // Check first 50 data rows
+                    for (let i = startIndex; i < endIndex; i++) {
+                        const row = jsonData[i];
+                        const columnG = row[6] || ''; // Column G (SPD)
+                        const columnL = row[11] || ''; // Column L (Alarm type)
+                        
+                        // Count different types
+                        if (typeof columnG === 'string' && columnG.trim().toUpperCase() === 'SPD') {
+                            spdCount++;
+                        }
+                        
+                        const trimmedColumnL = typeof columnL === 'string' ? columnL.trim().toUpperCase() : '';
+                        switch(trimmedColumnL) {
+                            case 'ENFRA':
+                                enfraCount++;
+                                break;
+                            case 'SMS LD':
+                                smsldCount++;
+                                break;
+                            case 'RESOLVED':
+                                resolvedCount++;
+                                break;
+                            default:
+                                if (trimmedColumnL && trimmedColumnL !== '') {
+                                    otherCount++;
+                                }
+                        }
+                        
+                        // Show first 5 rows with their column values
+                        if (i < startIndex + 5) {
+                            addDebug(`Row ${i}: Column G="${columnG}", Column L="${columnL}"`);
+                        }
+                    }
+                    
+                    addDebug(`<h3>Alarm Counts:</h3>
+                        <ul>
+                            <li>SPD alarms (Column G = "SPD"): ${spdCount}</li>
+                            <li>Enfra alarms (Column L = "ENFRA"): ${enfraCount}</li>
+                            <li>SMS LD alarms (Column L = "SMS LD"): ${smsldCount}</li>
+                            <li>Resolved alarms (Column L = "RESOLVED"): ${resolvedCount}</li>
+                            <li>Other alarms: ${otherCount}</li>
+                        </ul>`);
+                })
+                .catch(error => {
+                    addDebug('Error loading SPD.xlsx: ' + error.message, true);
+                });
+        }
+        
+        function testLocalStorage() {
+            addDebug('<h2>Testing LocalStorage Transfer</h2>');
+            
+            fetch('SPD.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    addDebug('Data loaded, rows: ' + jsonData.length);
+                    
+                    // Simulate storing in localStorage
+                    try {
+                        const dataString = JSON.stringify(jsonData);
+                        addDebug('Data size: ' + dataString.length + ' characters');
+                        
+                        localStorage.setItem('spdData', dataString);
+                        addDebug('Data stored in localStorage successfully');
+                        
+                        // Retrieve and verify
+                        const retrievedData = localStorage.getItem('spdData');
+                        if (retrievedData) {
+                            const parsedData = JSON.parse(retrievedData);
+                            addDebug('Data retrieved from localStorage, rows: ' + parsedData.length);
+                            
+                            if (JSON.stringify(jsonData) === retrievedData) {
+                                addDebug('Data integrity check: PASSED', false);
+                            } else {
+                                addDebug('Data integrity check: FAILED - Data was modified during storage', true);
+                            }
+                        } else {
+                            addDebug('Failed to retrieve data from localStorage', true);
+                        }
+                    } catch (e) {
+                        addDebug('Error with localStorage: ' + e.message, true);
+                    }
+                })
+                .catch(error => {
+                    addDebug('Error loading SPD.xlsx: ' + error.message, true);
+                });
+        }
+    </script>
+</body>
+</html>

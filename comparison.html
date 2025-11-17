@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Region Comparison Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-3d"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .back-button i {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px 40px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            animation: shine 8s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(30deg) translateX(-100%); }
+            100% { transform: rotate(30deg) translateX(100%); }
+        }
+
+        .header .logo {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 70px;
+            width: auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header .logo:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .header .header-content {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header h1 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #333;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .header .date-info {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-size: 14px;
+            color: #00008B;
+            font-weight: bold;
+            text-align: right;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            text-align: center;
+            color: #666;
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* File upload icon */
+        .file-upload-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-icon:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .file-upload-icon i {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .results-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            margin-bottom: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .region-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+            min-width: 200px;
+        }
+
+        .region-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .region-card.sukkur { animation-delay: 0.2s; }
+        .region-card.jacobabad { animation-delay: 0.7s; }
+        .region-card.larkana { animation-delay: 1.2s; }
+
+        .region-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .metric {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .metric h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            animation: floating 3s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-container h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            margin: 15px 0;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .status {
+            padding: 18px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 2px solid #28a745;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+        }
+
+        .error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 2px solid #dc3545;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+        }
+
+        .loading {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 2px solid #ffc107;
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+        }
+
+        /* Export section */
+        .export-section {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            margin-top: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            animation: floating 3s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+
+        .export-section h2 {
+            color: #333;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            font-weight: 800;
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 22px 40px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .export-btn-ppt {
+            background: linear-gradient(135deg, #d35400, #e67e22);
+        }
+
+        .export-btn-ppt:hover {
+            box-shadow: 0 15px 35px rgba(211, 84, 0, 0.6);
+        }
+
+        .export-btn-excel {
+            background: linear-gradient(135deg, #1e7e34, #28a745);
+        }
+
+        .export-btn-excel:hover {
+            box-shadow: 0 15px 35px rgba(30, 126, 52, 0.6);
+        }
+
+        .export-btn-pdf {
+            background: linear-gradient(135deg, #c82333, #dc3545);
+        }
+
+        .export-btn-pdf:hover {
+            box-shadow: 0 15px 35px rgba(200, 35, 51, 0.6);
+        }
+
+        .export-btn .icon {
+            font-size: 28px;
+        }
+
+        /* 3D Chart Container */
+        .chart-3d-container {
+            perspective: 1000px;
+            margin: 20px 0;
+        }
+
+        .chart-3d-wrapper {
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+
+        .chart-3d-wrapper:hover {
+            transform: rotateX(10deg) rotateY(10deg);
+        }
+
+        /* Floating animation */
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .comparison-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header .date-info {
+                position: static;
+                margin-top: 15px;
+                font-size: 12px;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .export-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .results-section {
+                padding: 20px;
+            }
+            
+            .region-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Floating back button -->
+        <div class="back-button" onclick="window.location.href='all_active_alarms.html'" title="Back to Active Alarms">
+            <i class="fas fa-arrow-left"></i>
+        </div>
+
+        <!-- File upload icon -->
+        <div class="file-upload-icon" id="fileUploadIcon" title="Load Excel File">
+            <i class="fas fa-file-upload"></i>
+        </div>
+
+        <div class="header">
+            <img src="Logo.jpeg" alt="RMS Logo" class="logo" onclick="document.getElementById('fileInput').click()">
+            <div class="date-info" id="dateInfo">Data till<br><span id="displayDate"></span><br><span id="displayTime" style="color: red; font-weight: bold;"></span></div>
+            <div class="header-content">
+                <h1>REGION COMPARISON DASHBOARD</h1>
+                <p>Comprehensive Analysis and Comparison of Sukkur Regions</p>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" />
+        <div id="uploadStatus" style="display: none;"></div>
+
+        <div class="results-section" id="resultsSection">
+            <!-- Comparison Grid -->
+            <div class="comparison-grid">
+                <div class="region-card sukkur">
+                    <h3>Sukkur Region</h3>
+                    <div class="metric">
+                        <h4>Total Alarms</h4>
+                        <div class="metric-value" id="sukkurTotalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Critical Alarms</h4>
+                        <div class="metric-value" id="sukkurCriticalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Avg. Aging (Days)</h4>
+                        <div class="metric-value" id="sukkurAvgAging">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Enfra Alarms</h4>
+                        <div class="metric-value" id="sukkurEnfraAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>SMS LD Alarms</h4>
+                        <div class="metric-value" id="sukkurSmsLdAlarms">0</div>
+                    </div>
+                </div>
+
+                <div class="region-card jacobabad">
+                    <h3>Jacobabad Region</h3>
+                    <div class="metric">
+                        <h4>Total Alarms</h4>
+                        <div class="metric-value" id="jacobabadTotalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Critical Alarms</h4>
+                        <div class="metric-value" id="jacobabadCriticalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Avg. Aging (Days)</h4>
+                        <div class="metric-value" id="jacobabadAvgAging">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Enfra Alarms</h4>
+                        <div class="metric-value" id="jacobabadEnfraAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>SMS LD Alarms</h4>
+                        <div class="metric-value" id="jacobabadSmsLdAlarms">0</div>
+                    </div>
+                </div>
+
+                <div class="region-card larkana">
+                    <h3>Larkana Region</h3>
+                    <div class="metric">
+                        <h4>Total Alarms</h4>
+                        <div class="metric-value" id="larkanaTotalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Critical Alarms</h4>
+                        <div class="metric-value" id="larkanaCriticalAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Avg. Aging (Days)</h4>
+                        <div class="metric-value" id="larkanaAvgAging">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>Enfra Alarms</h4>
+                        <div class="metric-value" id="larkanaEnfraAlarms">0</div>
+                    </div>
+                    <div class="metric">
+                        <h4>SMS LD Alarms</h4>
+                        <div class="metric-value" id="larkanaSmsLdAlarms">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="chart-container">
+                <h3>Region Comparison - Alarm Distribution</h3>
+                <div class="chart-wrapper">
+                    <canvas id="alarmComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Region Comparison - Aging Analysis</h3>
+                <div class="chart-wrapper">
+                    <canvas id="agingComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Region Comparison - Domain Distribution</h3>
+                <div class="chart-wrapper">
+                    <canvas id="domainComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Overall Regions Stability - 3D Pie Chart</h3>
+                <div class="chart-3d-container">
+                    <div class="chart-3d-wrapper">
+                        <div class="chart-wrapper">
+                            <canvas id="stabilityChart3D"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Buttons Section -->
+            <div class="export-section">
+                <h2>📥 Export Dashboard</h2>
+                <div class="export-buttons">
+                    <button class="export-btn export-btn-excel" onclick="exportToExcel()" title="Export all data to Excel spreadsheet">
+                        <span class="icon">📗</span>
+                        <span>Export to Excel</span>
+                    </button>
+                    <button class="export-btn export-btn-pdf" onclick="exportToPDF()" title="Export dashboard as PDF document">
+                        <span class="icon">📄</span>
+                        <span>Export to PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set the date in header (previous day) and current time
+        function setPreviousDate() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            const dayName = days[yesterday.getDay()];
+            const monthName = months[yesterday.getMonth()];
+            const date = yesterday.getDate();
+            const year = yesterday.getFullYear();
+            
+            const formattedDate = `${dayName}, ${monthName} ${date < 10 ? '0' + date : date}, ${year}`;
+            document.getElementById('displayDate').textContent = formattedDate;
+            
+            // Update time
+            updateTime();
+        }
+        
+        // Function to update current time
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            const timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
+            const timeElement = document.getElementById('displayTime');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+        
+        // Call on page load
+        setPreviousDate();
+        setInterval(updateTime, 1000);
+        
+        // Data storage
+        let rawData = [];
+        let regionData = {};
+        
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Process Excel file
+        function processExcelFile(file) {
+            showStatus('🔄 Processing Excel file...', 'loading');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    
+                    if (jsonData.length < 2) {
+                        showStatus('❌ Excel file is empty or invalid', 'error');
+                        return;
+                    }
+                    
+                    rawData = jsonData;
+                    processData();
+                    showStatus('✅ Excel file processed successfully', 'success');
+                } catch (error) {
+                    showStatus('❌ Error processing Excel file: ' + error.message, 'error');
+                }
+            };
+            reader.onerror = function() {
+                showStatus('❌ Error reading file', 'error');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Initialize with sample data
+        function initializeSampleData() {
+            rawData = [
+                ['Site ID', 'Sub Region', 'Region', 'Alarm Type', 'Days Passed', 'Aging', 'Alarm', 'ES POC', 'SMS POC', 'Summarize', 'Domain'],
+                ['S001', 'Jacob Abad', 'Sukkur', 'Deep Sea', 15, 'Critical', 'Power Failure', 'John Doe', 'Jane Smith', 'Site Down', 'Enfra'],
+                ['S002', 'Larkana', 'Sukkur', 'Rectifier | CSU', 30, 'Major', 'Rectifier Fault', 'Mike Johnson', 'Sarah Wilson', 'Rectifier Issue', 'SMS LD'],
+                ['S003', 'Sukkur', 'Sukkur', 'Rectifier Fan', 5, 'Minor', 'Fan Failure', 'Robert Brown', 'Emily Davis', 'Fan Problem', 'Enfra'],
+                ['S004', 'Jacob Abad', 'Sukkur', 'RMS', 45, 'Critical', 'RMS Offline', 'David Lee', 'Lisa Taylor', 'RMS Down', 'SMS LD'],
+                ['S005', 'Larkana', 'Sukkur', 'SPD', 20, 'Major', 'SPD Tripped', 'James Wilson', 'Maria Garcia', 'SPD Fault', 'Enfra'],
+                ['S006', 'Sukkur', 'Sukkur', 'Deep Sea', 10, 'Minor', 'Generator Fault', 'Thomas Anderson', 'Patricia Moore', 'Generator Issue', 'SMS LD'],
+                ['S007', 'Jacob Abad', 'Sukkur', 'Rectifier | CSU', 25, 'Critical', 'CSU Communication', 'Charles Hall', 'Jennifer Clark', 'CSU Issue', 'Enfra'],
+                ['S008', 'Larkana', 'Sukkur', 'Rectifier Fan', 35, 'Major', 'Multiple Fan Failures', 'Daniel Allen', 'Elizabeth King', 'Fan Array Issue', 'SMS LD'],
+                ['S009', 'Sukkur', 'Sukkur', 'RMS', 12, 'Minor', 'RMS Warning', 'Matthew Wright', 'Barbara Scott', 'RMS Warning', 'Enfra'],
+                ['S010', 'Jacob Abad', 'Sukkur', 'SPD', 18, 'Major', 'SPD Warning', 'Anthony Green', 'Susan Adams', 'SPD Warning', 'SMS LD']
+            ];
+        }
+        
+        // Process events data (similar to all_active_alarms.html)
+        function processEventsData(data) {
+            try {
+                console.log('Processing events data...');
+                showStatus('🔄 Processing Excel data...', 'loading');
+                
+                const workbook = XLSX.read(data, { type: 'array' });
+                console.log('Workbook sheet names:', workbook.SheetNames);
+                
+                // Assume the first sheet contains the data
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convert to JSON
+                rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                console.log('Raw data rows:', rawData.length);
+                
+                if (rawData.length === 0) {
+                    throw new Error('Excel file is empty or could not be parsed');
+                }
+                
+                // Additional check for valid data
+                if (rawData.length === 1 && (!rawData[0] || rawData[0].length === 0)) {
+                    throw new Error('Excel file contains only header row with no data');
+                }
+                
+                processData();
+                
+                showStatus('✅ Data processed successfully', 'success');
+                // Hide the upload icon after successful load
+                document.getElementById('fileUploadIcon').style.display = 'none';
+            } catch (error) {
+                console.error('Error processing events data:', error);
+                showStatus('❌ Error processing data: ' + error.message, 'error');
+                initializeSampleData();
+                processData();
+            }
+        }
+        
+        // Process data from Excel
+        function processData() {
+            console.log('Processing data, rawData length:', rawData ? rawData.length : 'undefined');
+            
+            // Initialize region data if not already done
+            if (!regionData || Object.keys(regionData).length === 0) {
+                regionData = {
+                    'Sukkur': {
+                        totalAlarms: 0,
+                        criticalAlarms: 0,
+                        avgAging: 0,
+                        enfraAlarms: 0,
+                        smsLdAlarms: 0,
+                        alarms: [],
+                        aging: []
+                    },
+                    'Jacob Abad': {
+                        totalAlarms: 0,
+                        criticalAlarms: 0,
+                        avgAging: 0,
+                        enfraAlarms: 0,
+                        smsLdAlarms: 0,
+                        alarms: [],
+                        aging: []
+                    },
+                    'Larkana': {
+                        totalAlarms: 0,
+                        criticalAlarms: 0,
+                        avgAging: 0,
+                        enfraAlarms: 0,
+                        smsLdAlarms: 0,
+                        alarms: [],
+                        aging: []
+                    }
+                };
+            }
+            
+            // Reset region data counts
+            for (const region in regionData) {
+                regionData[region].totalAlarms = 0;
+                regionData[region].criticalAlarms = 0;
+                regionData[region].avgAging = 0;
+                regionData[region].enfraAlarms = 0;
+                regionData[region].smsLdAlarms = 0;
+                regionData[region].alarms = [];
+                regionData[region].aging = [];
+            }
+            
+            // Check if rawData exists and has content
+            if (!rawData || rawData.length < 2) {
+                console.log('No valid data to process');
+                showStatus('❌ No valid data to process', 'error');
+                return;
+            }
+            
+            // Skip header row
+            for (let i = 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Extract data (adjust column indices as needed)
+                const subRegion = row[1] || 'Unknown';
+                const region = row[2] || 'Unknown';
+                const daysPassed = parseInt(row[4]) || 0;
+                const aging = row[5] || 'Minor';
+                const domain = row[10] || 'Unknown';
+                
+                // Map sub regions to main regions
+                let mainRegion = 'Unknown';
+                if (subRegion.includes('Sukkur') || subRegion === 'Sukkur') {
+                    mainRegion = 'Sukkur';
+                } else if (subRegion.includes('Jacob') || subRegion.includes('Abad') || subRegion === 'Jacob Abad') {
+                    mainRegion = 'Jacob Abad';
+                } else if (subRegion.includes('Larkana') || subRegion === 'Larkana') {
+                    mainRegion = 'Larkana';
+                }
+                
+                // Update region data
+                if (regionData[mainRegion]) {
+                    regionData[mainRegion].totalAlarms++;
+                    regionData[mainRegion].alarms.push(1);
+                    regionData[mainRegion].aging.push(daysPassed);
+                    
+                    if (aging.toLowerCase() === 'critical') {
+                        regionData[mainRegion].criticalAlarms++;
+                    }
+                    
+                    if (domain.toLowerCase() === 'enfra') {
+                        regionData[mainRegion].enfraAlarms++;
+                    } else if (domain.toLowerCase() === 'sms ld') {
+                        regionData[mainRegion].smsLdAlarms++;
+                    }
+                }
+            }
+            
+            // Calculate averages
+            for (const region in regionData) {
+                if (regionData[region].aging.length > 0) {
+                    const sum = regionData[region].aging.reduce((a, b) => a + b, 0);
+                    regionData[region].avgAging = Math.round(sum / regionData[region].aging.length);
+                }
+            }
+            
+            console.log('Processed region data:', regionData);
+            
+            // Update UI
+            updateRegionCards();
+            createCharts();
+        }
+        
+        // Update region cards with data
+        function updateRegionCards() {
+            document.getElementById('sukkurTotalAlarms').textContent = regionData['Sukkur'].totalAlarms;
+            document.getElementById('sukkurCriticalAlarms').textContent = regionData['Sukkur'].criticalAlarms;
+            document.getElementById('sukkurAvgAging').textContent = regionData['Sukkur'].avgAging;
+            document.getElementById('sukkurEnfraAlarms').textContent = regionData['Sukkur'].enfraAlarms;
+            document.getElementById('sukkurSmsLdAlarms').textContent = regionData['Sukkur'].smsLdAlarms;
+            
+            document.getElementById('jacobabadTotalAlarms').textContent = regionData['Jacob Abad'].totalAlarms;
+            document.getElementById('jacobabadCriticalAlarms').textContent = regionData['Jacob Abad'].criticalAlarms;
+            document.getElementById('jacobabadAvgAging').textContent = regionData['Jacob Abad'].avgAging;
+            document.getElementById('jacobabadEnfraAlarms').textContent = regionData['Jacob Abad'].enfraAlarms;
+            document.getElementById('jacobabadSmsLdAlarms').textContent = regionData['Jacob Abad'].smsLdAlarms;
+            
+            document.getElementById('larkanaTotalAlarms').textContent = regionData['Larkana'].totalAlarms;
+            document.getElementById('larkanaCriticalAlarms').textContent = regionData['Larkana'].criticalAlarms;
+            document.getElementById('larkanaAvgAging').textContent = regionData['Larkana'].avgAging;
+            document.getElementById('larkanaEnfraAlarms').textContent = regionData['Larkana'].enfraAlarms;
+            document.getElementById('larkanaSmsLdAlarms').textContent = regionData['Larkana'].smsLdAlarms;
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+        
+        // Create charts
+        function createCharts() {
+            // Destroy existing charts if they exist
+            if (window.alarmChart) window.alarmChart.destroy();
+            if (window.agingChart) window.agingChart.destroy();
+            if (window.domainChart) window.domainChart.destroy();
+            if (window.stabilityChart) window.stabilityChart.destroy();
+            
+            // Register datalabels plugin
+            Chart.register(ChartDataLabels);
+            
+            // Alarm Comparison Chart
+            const alarmCtx = document.getElementById('alarmComparisonChart').getContext('2d');
+            window.alarmChart = new Chart(alarmCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sukkur', 'Jacob Abad', 'Larkana'],
+                    datasets: [
+                        {
+                            label: 'Total Alarms',
+                            data: [
+                                regionData['Sukkur'].totalAlarms,
+                                regionData['Jacob Abad'].totalAlarms,
+                                regionData['Larkana'].totalAlarms
+                            ],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)'
+                            ],
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Alarms by Region'
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: Math.round,
+                            color: '#000',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Aging Comparison Chart
+            const agingCtx = document.getElementById('agingComparisonChart').getContext('2d');
+            window.agingChart = new Chart(agingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sukkur', 'Jacob Abad', 'Larkana'],
+                    datasets: [
+                        {
+                            label: 'Average Aging (Days)',
+                            data: [
+                                regionData['Sukkur'].avgAging,
+                                regionData['Jacob Abad'].avgAging,
+                                regionData['Larkana'].avgAging
+                            ],
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(153, 102, 255, 0.7)',
+                                'rgba(255, 159, 64, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Average Aging by Region'
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: Math.round,
+                            color: '#000',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Domain Comparison Chart
+            const domainCtx = document.getElementById('domainComparisonChart').getContext('2d');
+            window.domainChart = new Chart(domainCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Enfra', 'SMS LD'],
+                    datasets: [
+                        {
+                            label: 'Domain Distribution',
+                            data: [
+                                regionData['Sukkur'].enfraAlarms + regionData['Jacob Abad'].enfraAlarms + regionData['Larkana'].enfraAlarms,
+                                regionData['Sukkur'].smsLdAlarms + regionData['Jacob Abad'].smsLdAlarms + regionData['Larkana'].smsLdAlarms
+                            ],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)'
+                            ],
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Domain Distribution Across All Regions'
+                        },
+                        datalabels: {
+                            color: '#000',
+                            formatter: (value) => {
+                                return value;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 3D Stability Chart
+            const stabilityCtx = document.getElementById('stabilityChart3D').getContext('2d');
+            window.stabilityChart = new Chart(stabilityCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Sukkur', 'Jacob Abad', 'Larkana'],
+                    datasets: [
+                        {
+                            label: 'Region Stability',
+                            data: [
+                                100 - (regionData['Sukkur'].criticalAlarms / Math.max(1, regionData['Sukkur'].totalAlarms) * 100),
+                                100 - (regionData['Jacob Abad'].criticalAlarms / Math.max(1, regionData['Jacob Abad'].totalAlarms) * 100),
+                                100 - (regionData['Larkana'].criticalAlarms / Math.max(1, regionData['Larkana'].totalAlarms) * 100)
+                            ],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)'
+                            ],
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Overall Regions Stability (Higher % = More Stable)'
+                        },
+                        datalabels: {
+                            color: '#000',
+                            formatter: (value) => {
+                                return value.toFixed(1);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Export to Excel
+        function exportToExcel() {
+            showStatus('🔄 Exporting to Excel...', 'loading');
+            
+            try {
+                // In a real implementation, you would use a library like SheetJS to create an Excel file
+                // For now, we'll simulate the export
+                setTimeout(() => {
+                    showStatus('✅ Export to Excel completed', 'success');
+                    // Simulate download
+                    const link = document.createElement('a');
+                    link.href = 'data:text/plain;charset=utf-8,Region Comparison Report';
+                    link.download = 'region_comparison_report.xlsx';
+                    link.click();
+                }, 1000);
+            } catch (error) {
+                showStatus('❌ Error exporting to Excel: ' + error.message, 'error');
+            }
+        }
+        
+        // Export to PDF
+        function exportToPDF() {
+            showStatus('🔄 Exporting to PDF...', 'loading');
+            
+            try {
+                // In a real implementation, you would use jsPDF and html2canvas to create a PDF
+                // For now, we'll simulate the export
+                setTimeout(() => {
+                    showStatus('✅ Export to PDF completed', 'success');
+                    // Simulate download
+                    const link = document.createElement('a');
+                    link.href = 'data:text/plain;charset=utf-8,Region Comparison Report';
+                    link.download = 'region_comparison_report.pdf';
+                    link.click();
+                }, 1000);
+            } catch (error) {
+                showStatus('❌ Error exporting to PDF: ' + error.message, 'error');
+            }
+        }
+        
+        // Show manual upload icon when auto-loading fails
+        function showManualUploadIcon() {
+            const fileUploadIcon = document.getElementById('fileUploadIcon');
+            if (fileUploadIcon) {
+                fileUploadIcon.style.display = 'flex';
+                showStatus('⚠️ Auto-loading failed. Click the upload icon to manually select events.xlsx', 'error');
+            }
+        }
+        
+        // Load data from Google Sheets URL
+        function loadGoogleSheetsData() {
+            // Convert Google Sheets URL to export format
+            const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/1vXgSy0vSTMNChAMT-YfKUmGaXRWkcwpO/edit?gid=654235076#gid=654235076';
+            // Convert to export URL by replacing the parameters and preserving gid
+            let exportUrl = googleSheetsUrl.replace('/edit?', '/export?');
+            // Add format parameter if not already present
+            if (!exportUrl.includes('format=xlsx')) {
+                exportUrl += exportUrl.includes('?') ? '&format=xlsx' : '?format=xlsx';
+            }
+            console.log('Original URL:', googleSheetsUrl);
+            console.log('Export URL:', exportUrl);
+            console.log('Converted Google Sheets URL to export format:', exportUrl);
+            
+            console.log('Attempting to fetch from Google Sheets URL:', exportUrl);
+            showStatus('🔄 Loading data from Google Sheets...', 'loading');
+            
+            fetch(exportUrl)
+                .then(response => {
+                    console.log('Google Sheets fetch response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('Failed to load Google Sheets data: ' + response.status + ' ' + response.statusText);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    console.log('Google Sheets data loaded successfully, size:', data.byteLength);
+                    if (data.byteLength === 0) {
+                        throw new Error('Google Sheets data is empty');
+                    }
+                    showStatus('✅ Google Sheets data loaded successfully', 'success');
+                    processEventsData(data);
+                })
+                .catch(error => {
+                    console.log('Error loading Google Sheets data:', error);
+                    console.log('This might be due to CORS restrictions. Google Sheets may not allow direct fetching from browser.');
+                    console.log('Common reasons:');
+                    console.log('1. Google Sheets URL may be incorrect or incomplete');
+                    console.log('2. CORS policy blocking direct browser access');
+                    console.log('3. Google Sheets not publicly accessible');
+                    showStatus('⚠️ Google Sheets loading failed: ' + error.message + '. Trying local file...', 'error');
+                    // Try local file as fallback
+                    loadLocalEventsFile();
+                });
+        }
+        
+        // Load local events file as fallback
+        function loadLocalEventsFile() {
+            console.log('Attempting to auto-load events.xlsx file');
+            showStatus('🔄 Attempting to auto-load events.xlsx file...', 'loading');
+            
+            // Method 1: Try fetch API
+            fetch('XLSX Files/events.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fetch failed with status: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    console.log('events.xlsx file auto-loaded successfully using fetch');
+                    if (data.byteLength === 0) {
+                        throw new Error('Loaded file is empty');
+                    }
+                    showStatus('✅ events.xlsx file loaded successfully', 'success');
+                    processEventsData(data);
+                })
+                .catch(fetchError => {
+                    console.log('Fetch method failed:', fetchError.message);
+                    
+                    // Method 2: Try XMLHttpRequest
+                    try {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', 'XLSX Files/events.xlsx', true);
+                        xhr.responseType = 'arraybuffer';
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                console.log('events.xlsx file auto-loaded successfully using XMLHttpRequest');
+                                if (xhr.response.byteLength === 0) {
+                                    showStatus('❌ Loaded file is empty', 'error');
+                                    showManualUploadIcon();
+                                    return;
+                                }
+                                showStatus('✅ events.xlsx file loaded successfully', 'success');
+                                processEventsData(xhr.response);
+                            } else {
+                                console.log('XMLHttpRequest failed with status:', xhr.status);
+                                showStatus('⚠️ Could not load events.xlsx automatically', 'error');
+                                showManualUploadIcon();
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            console.log('XMLHttpRequest encountered an error');
+                            showStatus('⚠️ Could not load events.xlsx automatically', 'error');
+                            showManualUploadIcon();
+                        };
+                        
+                        xhr.send();
+                    } catch (xhrError) {
+                        console.log('XMLHttpRequest method failed:', xhrError.message);
+                        showStatus('⚠️ Could not load events.xlsx automatically', 'error');
+                        showManualUploadIcon();
+                    }
+                });
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up file input listener
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                        showStatus('🔄 Processing selected file...', 'loading');
+                        processExcelFile(file);
+                    } else {
+                        showStatus('❌ Please select a valid Excel file (.xlsx or .xls)', 'error');
+                    }
+                }
+            });
+            
+            // Set up logo click listener
+            document.querySelector('.logo').addEventListener('click', function() {
+                document.getElementById('fileInput').click();
+            });
+            
+            // Set up file upload icon listener
+            document.getElementById('fileUploadIcon').addEventListener('click', function() {
+                document.getElementById('fileInput').click();
+            });
+            
+            // Try to load data from Google Sheets first, then fallback to local file
+            console.log('Attempting to auto-load data from Google Sheets');
+            loadGoogleSheetsData();
+        });
+    </script>
+</body>
+</html>

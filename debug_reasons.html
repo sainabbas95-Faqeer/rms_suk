@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug RMS Reasons</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug RMS Offline Reasons</h1>
+    
+    <div class="debug-section">
+        <h3>1. Load and Analyze Data</h3>
+        <button onclick="loadAndAnalyzeData()">📊 Load Data from localStorage</button>
+        <div id="dataAnalysis"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>2. Column K (Reasons) Analysis</h3>
+        <div id="reasonsAnalysis"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>3. Test URL Parameters</h3>
+        <button onclick="testReasonFilter('Power Issue')">Test "Power Issue" Filter</button>
+        <button onclick="testReasonFilter('Network Issue')">Test "Network Issue" Filter</button>
+        <button onclick="testReasonFilter('Hardware Issue')">Test "Hardware Issue" Filter</button>
+        <div id="urlTest"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>4. Reason Categories Found</h3>
+        <div id="reasonCategories"></div>
+    </div>
+
+    <script>
+        let rawData = null;
+        let reasonCategories = {};
+
+        function loadAndAnalyzeData() {
+            const storedData = localStorage.getItem('rmsExcelData');
+            const analysisDiv = document.getElementById('dataAnalysis');
+            
+            if (!storedData) {
+                analysisDiv.innerHTML = '<div class="error">❌ No data found in localStorage. Please upload data on the main page first.</div>';
+                return;
+            }
+
+            try {
+                rawData = JSON.parse(storedData);
+                console.log('Raw data loaded:', rawData);
+                
+                if (!rawData || rawData.length < 2) {
+                    analysisDiv.innerHTML = '<div class="error">❌ Invalid data format or empty dataset.</div>';
+                    return;
+                }
+
+                // Analyze Column K (reasons)
+                analyzeReasons();
+                
+                analysisDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Data loaded successfully!<br>
+                        📊 Total rows: ${rawData.length}<br>
+                        📋 Headers: ${rawData[0] ? rawData[0].length : 0} columns<br>
+                        🔍 Column J (Reason - index 9): ${rawData[0] && rawData[0][9] ? rawData[0][9] : 'Column J'}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                analysisDiv.innerHTML = `<div class="error">❌ Error loading data: ${error.message}</div>`;
+            }
+        }
+
+        function analyzeReasons() {
+            if (!rawData) {
+                console.error('No data loaded');
+                return;
+            }
+
+            reasonCategories = {};
+            const reasonsAnalysisDiv = document.getElementById('reasonsAnalysis');
+            const reasonCategoriesDiv = document.getElementById('reasonCategories');
+            
+            // Process Column J (index 9) - CORRECTED MAPPING
+            for (let i = 1; i < rawData.length; i++) {
+                const row = rawData[i];
+                if (!row || row.length < 10) continue;
+                
+                const reason = row[9]; // Column J (was incorrectly row[10])
+                if (!reason) continue;
+                
+                const reasonStr = String(reason).trim();
+                if (!reasonStr) continue;
+                
+                if (!reasonCategories[reasonStr]) {
+                    reasonCategories[reasonStr] = 0;
+                }
+                reasonCategories[reasonStr]++;
+            }
+
+            // Display results
+            const sortedReasons = Object.entries(reasonCategories)
+                .sort((a, b) => b[1] - a[1]);
+
+            let reasonsTable = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reason</th>
+                            <th>Count</th>
+                            <th>Test Filter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedReasons.forEach(([reason, count]) => {
+                reasonsTable += `
+                    <tr>
+                        <td>${reason}</td>
+                        <td>${count}</td>
+                        <td><button onclick="testReasonFilter('${reason.replace(/'/g, "\\'")}')">Test</button></td>
+                    </tr>
+                `;
+            });
+
+            reasonsTable += '</tbody></table>';
+
+            reasonsAnalysisDiv.innerHTML = `
+                <div class="success">
+                    ✅ Found ${sortedReasons.length} unique reason categories<br>
+                    📊 Total records with reasons: ${sortedReasons.reduce((sum, [, count]) => sum + count, 0)}
+                </div>
+                ${reasonsTable}
+            `;
+
+            reasonCategoriesDiv.innerHTML = `
+                <pre>${JSON.stringify(reasonCategories, null, 2)}</pre>
+            `;
+        }
+
+        function testReasonFilter(reasonName) {
+            const urlTestDiv = document.getElementById('urlTest');
+            
+            // Create test URL
+            const baseUrl = 'table_view.html';
+            const testUrl = `${baseUrl}?type=reason&reason=${encodeURIComponent(reasonName)}`;
+            
+            // Show test results
+            urlTestDiv.innerHTML = `
+                <div class="success">
+                    🧪 Testing reason filter: <strong>${reasonName}</strong><br>
+                    🔗 Generated URL: <code>${testUrl}</code><br>
+                    📊 Expected records: ${reasonCategories[reasonName] || 0}<br>
+                    <button onclick="window.open('${testUrl}', '_blank')">🚀 Open Test URL</button>
+                </div>
+            `;
+
+            console.log('Testing reason filter:', {
+                reasonName: reasonName,
+                encoded: encodeURIComponent(reasonName),
+                expectedCount: reasonCategories[reasonName] || 0,
+                testUrl: testUrl
+            });
+        }
+
+        // Auto-load data on page load
+        window.addEventListener('load', function() {
+            // Small delay to ensure localStorage is ready
+            setTimeout(loadAndAnalyzeData, 100);
+        });
+    </script>
+</body>
+</html>

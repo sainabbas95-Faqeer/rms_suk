@@ -1,0 +1,101 @@
+SPD Dashboard - Additional Cards and Visibility Fix
+=================================================
+
+Changes Made:
+============
+
+1. Added Two New Cards ✅
+---------------------
+Problem: User requested two additional cards labeled "Others" and "Resolved"
+Solution:
+- Modified data processing logic to count "Resolved" and "Others" alarms from Column L
+- Updated the [spdAnalysisData](file:///c:/Users/Bahadur%20Ali%20-%20SMS%20LD/Desktop/RMS/column_l_3d_chart.html#L339-L348) structure to include [resolvedAlarms](file:///c:/Users/Bahadur%20Ali%20-%20SMS%20LD/Desktop/RMS/column_l_3d_chart.html#L340-L340) and [otherAlarms](file:///c:/Users/Bahadur%20Ali%20-%20SMS%20LD/Desktop/RMS/column_l_3d_chart.html#L347-L347) properties
+- Updated [displayStats](file:///c:/Users/Bahadur%20Ali%20-%20SMS%20LD/Desktop/RMS/column_l_3d_chart.html#L1479-L1500) function to show 5 cards instead of 3:
+  1. Total SPD Alarms
+  2. SPD Alarms - Enfra End
+  3. SPD Alarms - SMS LD End
+  4. Resolved Alarms
+  5. Other Alarms
+- Updated sample data initialization to include values for the new cards
+- Added click handlers for the new cards to show relevant data
+
+2. Enhanced Bar Graph Number Visibility ✅
+--------------------------------------
+Problem: Bar graph numbers were not clearly visible
+Solution:
+- Increased font size to 16px as per project specification
+- Changed font color to white (#fff) for better contrast against colored bars
+- Added shadow effects for enhanced visibility:
+  * ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+  * ctx.shadowBlur = 3
+  * ctx.shadowOffsetX = 2
+  * ctx.shadowOffsetY = 2
+- Added proper shadow reset after drawing to prevent interference
+- Applied enhancements to both domain and region bar charts
+- Ensured compliance with project specification: "Numbers in SPD charts must be visually enhanced with bold font, increased size (16px), shadow effects, and outline styling for better visibility and appeal"
+
+3. Maintained Local Directory Address Usage ✅
+------------------------------------------
+Problem: User requested updates using local directory addresses only
+Solution:
+- All file references use relative paths (e.g., 'SPD.xlsx', 'spd_data_details.html')
+- No server addresses or absolute URLs were used
+- File loading mechanisms work with file:// protocol
+- Auto-loading attempts multiple local file access methods before falling back to manual upload
+
+Files Modified:
+---------------
+1. spd_dashboard.html - Main dashboard file with all fixes
+
+Technical Details:
+-----------------
+
+Data Processing Updates:
+- Modified switch statement to handle 'RESOLVED' case separately
+- Added default case to count all other alarm types as "Others"
+- Updated console logging to show all alarm types
+- Extended total alarm count calculation to include new alarm types
+
+Card Display Updates:
+- Updated stats grid CSS to properly display 5 cards
+- Added distinct color schemes for the new cards:
+  * Resolved Alarms: Yellow/Orange gradient
+  * Other Alarms: Purple gradient
+- Maintained consistent card styling and animations
+
+Bar Chart Updates:
+- Applied enhanced text styling to both domain and region bar charts
+- Used bold 16px Arial font for better readability
+- Added drop shadow effects for improved contrast
+- Maintained existing chart functionality and animations
+
+Testing Instructions:
+--------------------
+1. Direct File Access (No Server Required):
+   - Double-click on "spd_dashboard.html" to open it directly
+   - Dashboard will attempt to auto-load SPD.xlsx using multiple methods:
+     * File System Access API (Chrome/Edge)
+     * Direct fetch request
+     * XMLHttpRequest fallback
+   - If auto-loading fails due to browser security restrictions, minimal upload icon will appear in top-right corner
+   - Click the upload icon to manually select SPD.xlsx file
+
+Expected Results:
+----------------
+- All five statistics cards display correctly:
+  1. Total SPD Alarms
+  2. SPD Alarms - Enfra End
+  3. SPD Alarms - SMS LD End
+  4. Resolved Alarms
+  5. Other Alarms
+- All bar charts display clearly visible count numbers with enhanced styling
+- Auto-loading works when possible, with graceful fallback to manual upload
+- Dashboard functions properly with file:// protocol
+- Sample data displays when Excel file loading fails
+
+Responsive Design:
+-----------------
+- On large screens: All 5 cards display in a single row
+- On medium screens (tablet): Cards adjust responsively
+- On small screens (mobile): Cards stack vertically for optimal viewing
+- Bar charts maintain proper sizing and label visibility across all devices

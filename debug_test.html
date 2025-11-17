@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Test</h1>
+        <p>This page helps debug file access issues.</p>
+        
+        <button onclick="testFileAccess()">Test File Access</button>
+        <button onclick="testDirectoryListing()">List XLSX Directory</button>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.textContent = message;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        function testFileAccess() {
+            log('Testing access to XLSX Files/Locations.xlsx...');
+            fetch('XLSX Files/Locations.xlsx')
+                .then(response => {
+                    log(`Response status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                    if (response.ok) {
+                        return response.arrayBuffer();
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                })
+                .then(data => {
+                    log(`File loaded successfully. Size: ${data.byteLength} bytes`, 'success');
+                })
+                .catch(error => {
+                    log(`Error: ${error.message}`, 'error');
+                });
+        }
+        
+        function testDirectoryListing() {
+            log('Testing directory listing...');
+            log('Note: Directory listing is typically not allowed for security reasons', 'error');
+        }
+    </script>
+</body>
+</html>
